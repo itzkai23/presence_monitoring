@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+            <form id="registration-form" method="POST" class="border p-4 rounded bg-light shadow">
+                <h2 class="mb-4 text-center fw-bold text-secondary">Student Registration</h2>
+            {% csrf_token %}
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="id_first_name" class="form-label fw-semibold">First Name</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="col">
+                    <label for="id_last_name" class="form-label fw-semibold">Last Name</label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="id_student_id" class="form-label fw-semibold">Student ID</label>
+                {{ form.student_id }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_email" class="form-label fw-semibold">Email</label>
+                {{ form.email }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_department" class="form-label fw-semibold">Department</label>
+                {{ form.department }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_course" class="form-label fw-semibold">Course</label>
+                {{ form.course }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_section" class="form-label fw-semibold">Section</label>
+                {{ form.section }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_year_level" class="form-label fw-semibold">Year Level</label>
+                {{ form.year_level }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_password" class="form-label fw-semibold">Password</label>
+                {{ form.password }}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_password_confirm" class="form-label fw-semibold">Confirm Password</label>
+                {{ form.password_confirm }}
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-success">Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Updated JavaScript for dynamic course selection -->
+<script>
+    const departmentToCourses = {
+        'CAS': [
+            'BA in Journalism',
+            'BA in Political Science',
+            'Bachelor of Public Administration',
+            'BS in Social Work'
+        ],
+        'CBA': [
+            'BS in Business Administration - Financial Management',
+            'BS in Business Administration - Human Resource Management',
+            'BS in Business Administration - Marketing Management',
+            'BS in Accountancy (BSA)',
+            'BS in Management Accounting (BSMA)'
+        ],
+        'CCS': ['BSIT'],
+        'CTE': [
+            'Bachelor in Elementary Education (BEED)',
+            'Bachelor in Secondary Education - English',
+            'Bachelor in Secondary Education - Mathematics',
+            'Bachelor in Secondary Education - Social Studies',
+            'Bachelor of Early Childhood Education (BECED)'
+        ],
+        'CCJE': ['BS in Criminology']  // ✅ fixed
+    };
+
+    function updateCourseOptions() {
+        const departmentSelect = document.getElementById('id_department');
+        const courseSelect = document.getElementById('id_course');
+        const selectedDept = departmentSelect.value;
+
+        courseSelect.innerHTML = ''; // Clear existing options
+
+        if (departmentToCourses[selectedDept]) {
+            departmentToCourses[selectedDept].forEach(course => {
+                const option = document.createElement('option');
+                option.value = course;
+                option.textContent = course;
+                courseSelect.appendChild(option);
+            });
+
+            // Retain selected value after re-render if it's valid
+            const currentVal = "{{ form.course.value|escapejs }}";
+            if (currentVal && departmentToCourses[selectedDept].includes(currentVal)) {
+                courseSelect.value = currentVal;
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const departmentSelect = document.getElementById('id_department');
+        if (departmentSelect) {
+            departmentSelect.addEventListener('change', updateCourseOptions);
+            updateCourseOptions(); // Populate on load
+        }
+    });
+
+    document.getElementById('registration-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch("{% url 'register' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(res => {
+        if (res.redirected) {
+            // If redirect, go to OTP page
+            window.location.href = res.url;
+        } else {
+            return res.text().then(html => {
+                document.body.innerHTML = html;  // Replace with form errors if any
+            });
+        }
+    })
+    .catch(err => {
+        console.error('Registration failed:', err);
+        alert('An error occurred. Please try again.');
+    });
+});
+</script>
+{% endblock %}

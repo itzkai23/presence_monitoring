@@ -1,0 +1,6 @@
+__pycache__/ 
+venv312/  echo myenv/  echo *.log 
+*.pkl 
+staticfiles/ 
+media/ 
+.DS_Store 

@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enter New Password</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .show-password {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .message.error { color: red; }
+    .message.success { color: green; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Set New Password</h2>
+
+    <form id="passwordForm">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+      <label for="new-password">New Password:</label>
+      <input type="password" id="new-password" name="new_password" required minlength="6"  autocomplete="new-password">
+
+      <label for="confirm-password">Confirm Password:</label>
+      <input type="password" id="confirm-password" name="confirm_password" required minlength="6"  autocomplete="new-password">
+
+      <div class="show-password">
+        <input type="checkbox" id="togglePass" onclick="togglePasswordVisibility()"> 
+        <label for="togglePass">Show Password</label>
+      </div>
+
+      <button type="submit">Update Password</button>
+    </form>
+
+    <div id="form-message" class="message"></div>
+  </div>
+
+  <script>
+  document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const newPassword = document.getElementById('new-password').value.trim();
+  const confirmPassword = document.getElementById('confirm-password').value.trim();
+  const messageDiv = document.getElementById('form-message');
+
+  messageDiv.className = "message";
+
+  if (newPassword !== confirmPassword) {
+    showMessage("Passwords do not match!", "error");
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    showMessage("Password must be at least 6 characters.", "error");
+    return;
+  }
+
+  try {
+    const response = await fetch("{% url 'enternewpass' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value
+      },
+      body: new URLSearchParams({
+        new_password: newPassword,
+        confirm_password: confirmPassword  // ✅ This line added
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'success') {
+      showMessage(data.message, "success");
+      setTimeout(() => {
+        window.location.href = "{% url 'login' %}";
+      }, 1500);
+    } else {
+      showMessage(data.message, "error");
+    }
+
+  } catch (err) {
+    showMessage("Something went wrong. Please try again.", "error");
+  }
+});
+
+    function togglePasswordVisibility() {
+      const newPass = document.getElementById("new-password");
+      const confirmPass = document.getElementById("confirm-password");
+      const type = newPass.type === "password" ? "text" : "password";
+      newPass.type = type;
+      confirmPass.type = type;
+    }
+
+    function showMessage(msg, type) {
+      const div = document.getElementById("form-message");
+      div.textContent = msg;
+      div.className = `message ${type}`;
+      setTimeout(() => { div.textContent = ""; }, 4000);
+    }
+  </script>
+</body>
+</html>

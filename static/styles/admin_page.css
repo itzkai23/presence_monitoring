@@ -1,0 +1,133 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 250px;
+  height: 100vh;
+  background-color: #343a40;
+  color: white;
+  transition: left 0.3s ease;
+  padding-top: 60px;
+  z-index: 1050;
+  overflow-y: auto;
+}
+#sidebar.active {
+  left: 0;
+}
+#sidebar .nav-link,
+#sidebar span.nav-link {
+  color: #ccc;
+  cursor: pointer;
+  display: block;
+  padding: 8px 12px;
+  user-select: none;
+}
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active {
+  background-color: #495057;
+  color: white;
+}
+.nested-list {
+  list-style: none;
+  padding-left: 1rem;
+}
+.nested-list ul {
+  margin-top: 0.3rem;
+  padding-left: 1rem;
+}
+#sidebar span.nav-link.toggle-arrow::after {
+  content: " \25BC";
+  font-size: 0.7rem;
+  float: right;
+  transition: transform 0.3s ease;
+}
+#sidebar span.nav-link.toggle-arrow.active::after {
+  transform: rotate(-90deg);
+}
+#mainContent {
+  margin-left: 0;
+  transition: margin-left 0.3s ease;
+  padding: 60px 20px 20px 20px;
+  overflow-x: auto;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+#mainContent.shifted {
+  margin-left: 250px;
+}
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: #212529;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1060;
+}
+header button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+@media (min-width: 768px) {
+  #sidebar {
+    left: 0;
+  }
+  #mainContent {
+    margin-left: 250px;
+  }
+  #toggleSidebar {
+    display: none;
+  }
+}
+.table-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.1);
+  margin-bottom: 2rem;
+}
+h2 {
+  margin-bottom: 1rem;
+}
+.search-input {
+  margin-bottom: 1rem;
+}
+@media (min-width: 768px) {
+  .tables-row {
+    display: flex;
+    gap: 2rem;
+  }
+  .table-container {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+
+#dropdownMenu {
+  transition: opacity 0.2s ease;
+}
+
+#dropdownMenu.d-none {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#dropdownMenu:not(.d-none) {
+  opacity: 1;
+  pointer-events: auto;
+}

@@ -1,0 +1,84 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Archived Students{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="text-center mb-4 custom-icon">Archived Students</h2>
+
+  {% if archived_students %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Department</th>
+          <th>Archived At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in archived_students %}
+        <tr>
+          <td class="text-center">{{ student.student_id }}</td>
+          <td>{{ student.first_name }} {{ student.last_name }}</td>
+          <td>{{ student.email }}</td>
+          <td>{{ student.department }}</td>
+          <td class="text-center">
+            {% if student.archived_at %}
+              {{ student.archived_at|date:"Y-m-d H:i" }}
+            {% else %}
+              Not available
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <button type="button" class="btn btn-sm btn-success retrieve-btn" data-id="{{ student.id }}">
+              <i class="bi bi-arrow-clockwise"></i> Retrieve
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center" role="alert">
+    No archived students found.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll(".retrieve-btn").forEach(button => {
+      button.addEventListener("click", async () => {
+        const id = button.dataset.id;
+        if (confirm("Retrieve this student?")) {
+          const res = await fetch(`/retrieve-student/${id}/`, {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": getCSRFToken()
+            }
+          });
+
+          const data = await res.json();
+          alert(data.message);
+          if (data.status === "success") location.reload();
+        }
+      });
+    });
+  });
+
+  function getCSRFToken() {
+    const cookies = document.cookie.split(";").map(c => c.trim());
+    const csrf = cookies.find(c => c.startsWith("csrftoken="));
+    return csrf ? csrf.split("=")[1] : "";
+  }
+</script>
+{% endblock %}

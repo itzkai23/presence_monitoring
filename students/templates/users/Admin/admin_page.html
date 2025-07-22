@@ -1,0 +1,86 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'styles/admin_page.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- 🔍 Search Bar -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <input type="text" id="studentSearchInput" class="form-control" placeholder="Search students by name, ID, email, or section...">
+    </div>
+  </div>
+
+  <!-- 📋 Table Container -->
+  <div id="studentTableContainer" class="table-dark">
+    <!-- Student table will be dynamically injected here -->
+  </div>
+</div>
+
+<!-- Camera Modal (unchanged) -->
+<div id="cameraModal" class="modal" style="
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.8);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 20px;
+">
+  <video id="cameraStream" autoplay style="
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    display: block;
+  "></video>
+
+  <img id="previewImage" style="
+    display: none;
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  " />
+
+  <canvas id="captureCanvas" style="display: none;"></canvas>
+
+  <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <button onclick="capturePhoto()" class="btn btn-primary">Capture</button>
+    <button onclick="confirmPhoto()" class="btn btn-success">Confirm</button>
+    <button onclick="retakePhoto()" class="btn btn-warning">Retake</button>
+    <button onclick="closeCameraModal()" class="btn btn-secondary">Close</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'scripts/admin_page.js' %}"></script>
+<script>
+  // Real-time search filter
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById("studentSearchInput");
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#studentTableContainer tbody tr");
+
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(query) ? "" : "none";
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

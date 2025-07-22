@@ -1,0 +1,106 @@
+{% load static %}
+{% load tz %}  {# For timezone-aware 'now' #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Presence record</title>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'styles/presence_table.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+{% endblock %}
+
+<style>
+  .custom-dropdown-hidden {
+    display: none !important;
+  }
+</style>
+
+</head>
+
+<header class="d-flex align-items-center justify-content-between bg-dark border-bottom shadow-sm px-4" style="height: 64px;">
+  <!-- Left section: Page Title -->
+  <div class="d-flex align-items-center gap-2">
+    <h5 class="mb-0 fw-semibold text-light">Presence Monitoring</h5>
+  </div>
+
+  <!-- Right section: Custom Profile Dropdown -->
+  <div class="position-relative" id="customProfileDropdown">
+    <button class="btn d-flex align-items-center gap-2 border-0 bg-dark" id="profileToggleBtn" type="button">
+      <img src="{% static 'images/avatar.png' %}" width="36" height="36" class="rounded-circle">
+      <span class="d-none d-md-inline text-light">
+        {{ request.user.get_full_name|default:request.user.username }}
+      </span>
+      <i class="bi bi-caret-down-fill text-light"></i>
+    </button>
+
+    <div id="dropdownMenu" class="position-absolute end-0 mt-2 py-2 bg-white border rounded shadow-sm custom-dropdown-hidden" style="min-width: 180px; z-index: 999;">
+      <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark text-decoration-none" href="#">
+        <i class="bi bi-gear fs-5"></i> Settings
+      </a>
+      <form action="{% url 'logout' %}" method="post" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-danger fs-6">
+          <i class="bi bi-box-arrow-right fs-5 text-danger"></i>Logout
+        </button>
+      </form>
+    </div>
+  </div>
+</header>
+
+{% block content %}
+<main id="mainContent">
+  <div class="table-container">
+    <h2 class="text-center mb-1">Presence Logs for 
+      <strong>{% now "F d, Y" %}</strong>
+    </h2>
+
+    <input type="search" id="searchPresence" class="form-control search-input" placeholder="Search presence records..." />
+
+    <table class="table table-striped table-hover align-middle mt-3">
+      <thead class="table-dark">
+        <tr>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Date</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Purpose</th>
+          <th>Snapshot</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="presenceTableBody">
+        <!-- Records will be dynamically injected by JS -->
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'scripts/presence_table.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggleBtn = document.getElementById("profileToggleBtn");
+    const dropdownMenu = document.getElementById("dropdownMenu");
+    const profileWrapper = document.getElementById("customProfileDropdown");
+
+    toggleBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      dropdownMenu.classList.toggle("custom-dropdown-hidden");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!profileWrapper.contains(e.target)) {
+        dropdownMenu.classList.add("custom-dropdown-hidden");
+      }
+    });
+  });
+</script>
+
+{% endblock %}
+</body>
+</html>

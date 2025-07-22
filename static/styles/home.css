@@ -1,0 +1,92 @@
+.calendar-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fefefe;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.month-year-selector {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.calendar-header {
+  font-weight: bold;
+  padding: 10px 0;
+  background-color: #f1f1f1;
+  border-radius: 4px;
+}
+
+.calendar-day {
+  padding: 1rem 0;
+  border-radius: 4px;
+  background-color: #ffffff;
+  cursor: pointer;
+  border: 1px solid #e3e3e3;
+  transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+  background-color: #f5f5f5;
+}
+
+.calendar-day.empty {
+  background-color: transparent;
+  border: none;
+  cursor: default;
+}
+
+/* Highlight today */
+.today {
+  background-color: #cce5ff;
+  font-weight: bold;
+  border: 2px solid #007bff;
+}
+
+/* Highlight days with events/logs */
+.logged {
+  background-color: #d4edda;
+  border: 2px solid #28a745;
+}
+
+/* Today + Event */
+.today.logged {
+  background-color: #a6d1ff !important;
+  border: 2px solid #0d6efd;
+}
+
+/* Hover state for event days */
+.logged:hover {
+  background-color: #bcd0c7;
+  transition: background-color 0.2s ease;
+}
+
+/* Modal input styling */
+#editPurposeInput {
+  font-size: 0.95rem;
+}
+
+/* Purpose update feedback */
+#purposeFeedback {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: green;
+}
+
+/* Loader Spinner */
+#calendarLoading {
+  margin-top: 20px;
+  text-align: center;
+}

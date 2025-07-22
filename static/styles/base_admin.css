@@ -1,0 +1,29 @@
+#sidebar {
+    width: 250px;
+    flex-shrink: 0;
+  }
+
+  #sidebar.hidden {
+    width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  
+  a[aria-expanded="true"] i {
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
+  }
+  a[aria-expanded="false"] i {
+    transform: rotate(0);
+    transition: transform 0.2s ease;
+  }
+
+  .custom-dropdown-hidden {
+display: none !important;
+}

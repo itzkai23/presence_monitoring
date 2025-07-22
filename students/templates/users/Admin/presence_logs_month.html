@@ -1,0 +1,48 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'styles/presence_logs.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">
+        <i class="bi bi-calendar-event"></i> Presence Logs for {{ month }}</h2>
+
+    {% if logs %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Date & Time</th>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Purpose</th>
+                    <th>Edited</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.student_id }}</td>
+                    <td>{{ log.name }}</td>
+                    <td>{{ log.role }}</td>
+                    <td>{{ log.department }}</td>
+                    <td>{{ log.purpose }}</td>
+                    <td>{{ log.edited|yesno:"✅,❌" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info">No logs found for this month.</div>
+    {% endif %}
+</div>
+{% endblock %}

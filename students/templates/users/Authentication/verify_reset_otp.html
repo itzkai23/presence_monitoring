@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset OTP Verification</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body {
+      background-color: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .otp-box {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .otp-box h2 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .info {
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+    .otp-inputs {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .otp-inputs input {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      transition: border-color 0.3s ease;
+    }
+    .otp-inputs input:focus {
+      border-color: #007BFF;
+      outline: none;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .submit-btn:hover {
+      background-color: #0056b3;
+    }
+    .message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+
+  <div class="otp-box">
+    <h2>Enter OTP</h2>
+    <div class="info">
+      OTP sent to your email:
+      <span style="color:#007BFF;">
+        {{ request.session.otp_email|default:"your email" }}
+      </span>
+    </div>
+    
+    <form id="otp-form">
+      <input type="hidden" id="csrf_token" value="{{ csrf_token }}">
+      <div class="otp-inputs">
+        {% for i in "123456" %}
+          <input 
+            name="otp{{ forloop.counter }}" 
+            type="text" 
+            maxlength="1" 
+            pattern="[0-9]*" 
+            inputmode="numeric" 
+            autocomplete="one-time-code" 
+            aria-label="OTP digit {{ forloop.counter }}" 
+            required 
+          />
+        {% endfor %}
+      </div>
+      <button type="submit" class="submit-btn">Verify</button>
+      <div id="message" class="message"></div>
+    </form>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll('.otp-inputs input');
+    const messageEl = document.getElementById("message");
+    const csrfToken = document.getElementById("csrf_token").value;
+
+    // Auto-focus next input and allow pasting the full OTP
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (value.length === 6) {
+          [...value].forEach((char, i) => inputs[i].value = char);
+          inputs[5].focus();
+        } else if (value.length === 1 && index < inputs.length - 1) {
+          inputs[index + 1].focus();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === "Backspace" && !input.value && index > 0) {
+          inputs[index - 1].focus();
+        }
+      });
+    });
+
+    document.getElementById('otp-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const enteredOTP = Array.from(inputs).map(input => input.value.trim()).join('');
+
+      if (enteredOTP.length !== 6 || !/^\d{6}$/.test(enteredOTP)) {
+        messageEl.textContent = "Please enter a valid 6-digit OTP.";
+        messageEl.className = "message error";
+        return;
+      }
+
+      messageEl.textContent = "Verifying OTP...";
+      messageEl.className = "message";
+
+      const response = await fetch("{% url 'verify_reset_otp' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken
+        },
+        body: new URLSearchParams({
+          otp: enteredOTP,
+          email: "{{ request.session.otp_email }}"
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        messageEl.textContent = data.message;
+        messageEl.className = "message success";
+        setTimeout(() => {
+          window.location.href = "{% url 'enternewpass' %}";
+        }, 1200);
+      } else {
+        messageEl.textContent = data.message;
+        messageEl.className = "message error";
+      }
+    });
+  </script>
+
+</body>
+</html>

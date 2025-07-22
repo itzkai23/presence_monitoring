@@ -1,0 +1,49 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+{% load tz %}
+{% block title %}Presence Records{% endblock %}
+
+<head>
+  {% block extra_css %}
+    <link rel="stylesheet" href="{% static 'styles/presence_table.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/base_admin.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  {% endblock %}
+</head>
+
+{% block content %}
+<main id="mainContent">
+  <div class="table-container">
+    <h2 class="text-center mb-1">Presence Logs for 
+      <strong>{% now "F d, Y" %}</strong>
+    </h2>
+
+    <input type="search" id="searchPresence" class="form-control search-input" placeholder="Search presence records..." />
+
+    <table class="table table-striped table-hover align-middle mt-3">
+      <thead class="table-dark">
+        <tr>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Date</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Purpose</th>
+          <th>Snapshot</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="presenceTableBody">
+        <!-- Records will be dynamically injected by JS -->
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'scripts/presence_table.js' %}"></script>
+{% endblock %}
+</body>
+</html>

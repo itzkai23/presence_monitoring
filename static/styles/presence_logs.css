@@ -1,0 +1,11 @@
+table {
+  font-size: 14px;
+}
+
+.table thead th {
+  text-align: center;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
