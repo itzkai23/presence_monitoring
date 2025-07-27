@@ -12,9 +12,11 @@
 
   <style>
     #sidebar {
-      width: 250px;
-      flex-shrink: 0;
-    }
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  transition: none; /* remove if not using sidebar toggling */
+}
 
     #sidebar.hidden {
       width: 0 !important;
@@ -23,10 +25,21 @@
       transition: width 0.3s ease;
     }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
+    .collapse {
+  transition: none !important;
+}
+
+html {
+  height: 100%;
+  margin: 0;
+  scrollbar-gutter: stable; /* ✅ the magic fix */
+}
+
+body {
+  height: 100%;
+  margin: 0;
+}
+
     
     a[aria-expanded="true"] i {
       transform: rotate(180deg);
@@ -39,7 +52,13 @@
 
     .custom-dropdown-hidden {
   display: none !important;
-}
+    }
+
+     /* header is 64px tall */
+    /* main {
+  min-height: calc(100vh - 64px);
+} */
+
   </style>
 </head>
 <body class="d-flex">
@@ -52,7 +71,11 @@
 
   <!-- Branding / Logo -->
   <div class="text-center mb-4">
-    <img src="{% static 'images/logo.png' %}" alt="Admin Logo" width="80" class="mb-2 rounded-circle border border-light">
+    <div class="position-relative d-inline-block">
+      <i class="bi bi-person-circle text-light fs-1"></i>
+      <i class="bi bi-shield-lock-fill text-warning position-absolute bottom-0 end-0" style="font-size: 0.8rem;"></i>
+    </div>
+    
     <h5 class="fw-bold mb-0">Student Tracker Admin</h5>
     <small class="text-muted">Control Panel</small>
   </div>
@@ -132,7 +155,7 @@
 <!-- Right section: Custom Profile Dropdown -->
 <div class="position-relative" id="customProfileDropdown">
   <button class="btn d-flex align-items-center gap-2 border-0 bg-white text-dark text-decoration-none" id="profileToggleBtn" type="button">
-    <img src="{% static 'images/avatar.png' %}" width="36" height="36" class="rounded-circle">
+    <i class="bi bi-person-circle text-dark fs-2 me-1"></i>
     <span class="d-none d-md-inline text-dark">
       {{ request.user.get_full_name|default:request.user.username }}
     </span>
