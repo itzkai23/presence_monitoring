@@ -61,7 +61,7 @@
 <!-- Mobile: Guest Dropdown -->
 <div class="dropdown d-lg-none mobile-menu ms-auto">
   <button class="btn bg-transparent border-0" id="guestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-    <i class="bi bi-person-circle fs-4 text-primary"></i>
+    <i class="bi bi-person-circle fs-4 text-secondary"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="guestDropdown">
     <li><a class="dropdown-item" href="{% url 'register' %}"><i class="bi bi-person-plus me-2"></i>Register</a></li>
@@ -95,13 +95,13 @@
           {% else %}
             <ul class="navbar-nav ms-auto">
               <li class="nav-item">
-                <a href="{% url 'register' %}" class="nav-link">
-                  <i class="bi bi-person-plus"></i> Register
+                <a href="{% url 'register' %}" class="nav-link fw-bold text-secondary">
+                  <i class="bi bi-person-plus fs-5"></i> Register
                 </a>
               </li>
               <li class="nav-item">
-                <a href="{% url 'login' %}" class="nav-link">
-                  <i class="bi bi-person"></i> Login
+                <a href="{% url 'login' %}" class="nav-link fw-bold text-secondary">
+                  <i class="bi bi-person fs-5"></i> Login
                 </a>
               </li>
             </ul>

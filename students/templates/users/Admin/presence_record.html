@@ -29,7 +29,7 @@
   <!-- Right section: Custom Profile Dropdown -->
   <div class="position-relative" id="customProfileDropdown">
     <button class="btn d-flex align-items-center gap-2 border-0 bg-dark" id="profileToggleBtn" type="button">
-      <img src="{% static 'images/avatar.png' %}" width="36" height="36" class="rounded-circle">
+      <i class="bi bi-person-workspace fs-4 text-light"></i>
       <span class="d-none d-md-inline text-light">
         {{ request.user.get_full_name|default:request.user.username }}
       </span>
