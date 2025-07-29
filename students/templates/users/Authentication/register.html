@@ -3,6 +3,66 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
+<style>
+    body {
+      background: linear-gradient(135deg, #0e1f2f, #1f2f3f); /* subtle navy gradient */
+      color: #e8eef4;
+    }
+  
+    .form-label {
+      color: #cfd8dc;  /* soft grayish-blue */
+    }
+  
+    .form-control {
+      border: 1px solid #4b5d6b;
+      background-color: #1a2b3a; /* deep slate blue */
+      color: #e8eef4;
+    }
+  
+    .form-control::placeholder {
+      color: #aab4be;
+    }
+  
+    .form-control:focus {
+      border-color: #00bcd4;
+      background-color: #223344;
+      color: #ffffff;
+      box-shadow: 0 0 0 0.15rem rgba(0, 188, 212, 0.25);
+    }
+  
+    .btn-success {
+      background-color: #00bcd4;
+      border-color: #00bcd4;
+      color: #ffffff;
+    }
+  
+    .btn-success:hover {
+      background-color: #009daf;
+      border-color: #009daf;
+    }
+  
+    .alert-danger {
+      background-color: #2e1a1a;
+      color: #ffaaaa;
+      border-color: #8b0000;
+    }
+  
+    .shadow {
+      box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.4);
+    }
+  
+    /* Fix for card background */
+    #registration-form {
+      background: #1c2e3e;  /* dark muted blue */
+    }
+  
+    h2 {
+      color: #ffffff;
+    }
+  </style>
+  
+  
+
 <div class="row justify-content-center">
     <div class="col-md-8">
 
@@ -18,8 +78,8 @@
             </div>
         {% endif %}
 
-            <form id="registration-form" method="POST" class="border p-4 rounded bg-light shadow">
-                <h2 class="mb-4 text-center fw-bold text-secondary">Student Registration</h2>
+            <form id="registration-form" method="POST" class="border p-4 rounded shadow">
+                <h2 class="mb-4 text-center fw-bold text-light">Student Registration</h2>
             {% csrf_token %}
 
             <div class="row mb-3">

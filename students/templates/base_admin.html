@@ -59,6 +59,31 @@ body {
   min-height: calc(100vh - 64px);
 } */
 
+ /* Active sidebar link */
+ .nav-link.active {
+    background-color: #1f2937 !important;  /* Dark gray-blue, blends well */
+    color: #ffc107 !important;             /* Bright yellow text/icon */
+    font-weight: 600;
+    border-left: 4px solid #ffc107;
+    padding-left: 0.85rem !important;
+  }
+
+  /* Hover effect for all nav links */
+  .nav-link:hover {
+    background-color: #374151 !important;  /* Slightly lighter than sidebar */
+    color: #f8f9fa !important;
+  }
+
+  /* Icon color in active link */
+  .nav-link.active i {
+    color: #ffc107 !important;
+  }
+
+  /* Smooth transitions */
+  .nav-link, .nav-link i {
+    transition: all 0.3s ease-in-out;
+  }
+
   </style>
 </head>
 <body class="d-flex">
@@ -93,17 +118,17 @@ body {
       <div class="text-uppercase fw-bold small text-white-50 ps-2">Management</div>
     </li>
     <li class="nav-item">
-      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_table' %}active bg-secondary{% endif %}" href="{% url 'presence_table' %}">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_table' %}active{% endif %}" href="{% url 'presence_table' %}">
         <i class="bi bi-clock-history me-2"></i>Presence Records
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link text-white {% if request.resolver_match.url_name == 'student_records' %}active bg-secondary{% endif %}" href="{% url 'student_records' %}">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'student_records' %}active{% endif %}" href="{% url 'student_records' %}">
         <i class="bi bi-person-lines-fill me-2"></i>Student Records
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_logs_month' %}active bg-secondary{% endif %}" href="{% url 'presence_logs_month' %}">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_logs_month' %}active{% endif %}" href="{% url 'presence_logs_month' %}">
         <i class="bi bi-calendar-event me-2"></i>Monthly Logs
       </a>
     </li>
@@ -115,7 +140,7 @@ body {
     <li class="nav-item">
       <a class="nav-link text-white d-flex justify-content-between align-items-center
    {% if request.resolver_match.url_name in 'presence_table student_records archived_logs archived_students' %}
-     active bg-secondary
+     active
    {% endif %}"
    data-bs-toggle="collapse"
    href="#archivedCollapse"
@@ -130,12 +155,12 @@ body {
         id="archivedCollapse">
         <ul class="nav flex-column ps-4 mt-1">
           <li class="nav-item">
-            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_logs' %}active bg-secondary{% endif %}" href="{% url 'archived_logs' %}">
+            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_logs' %}active{% endif %}" href="{% url 'archived_logs' %}">
               <i class="bi bi-box me-2"></i>Archived Logs
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active bg-secondary{% endif %}" href="{% url 'archived_students' %}">
+            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active{% endif %}" href="{% url 'archived_students' %}">
               <i class="bi bi-archive me-2"></i>Archived Students
             </a>
           </li>
