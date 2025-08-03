@@ -5,7 +5,7 @@
 {% block content %}
 <style>
     body {
-      background: linear-gradient(135deg, #0e1f2f, #1f2f3f); /* subtle navy gradient */
+        background: linear-gradient(135deg, #02111c, #0b3c5d);
       color: #e8eef4;
     }
   
@@ -15,17 +15,17 @@
   
     .form-control {
       border: 1px solid #4b5d6b;
-      background-color: #1a2b3a; /* deep slate blue */
+      background-color: #091a26;
       color: #e8eef4;
     }
   
     .form-control::placeholder {
-      color: #aab4be;
+      color: #88a9c0;
     }
   
     .form-control:focus {
       border-color: #00bcd4;
-      background-color: #223344;
+      background-color: #0f2a3e;
       color: #ffffff;
       box-shadow: 0 0 0 0.15rem rgba(0, 188, 212, 0.25);
     }
@@ -53,7 +53,10 @@
   
     /* Fix for card background */
     #registration-form {
-      background: #1c2e3e;  /* dark muted blue */
+      background: linear-gradient(145deg, #0b1f2e, #0f2639);
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
     }
   
     h2 {
@@ -78,7 +81,7 @@
             </div>
         {% endif %}
 
-            <form id="registration-form" method="POST" class="border p-4 rounded shadow">
+            <form id="registration-form" method="POST" class="p-4 rounded shadow">
                 <h2 class="mb-4 text-center fw-bold text-light">Student Registration</h2>
             {% csrf_token %}
 

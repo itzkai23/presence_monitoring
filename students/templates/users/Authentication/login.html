@@ -8,7 +8,7 @@
   body {
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #041b2d, #0b3c5d);
+    background: linear-gradient(135deg, #02111c, #0b3c5d);
     font-family: 'Segoe UI', sans-serif;
     color: #cfeaff;
   }
@@ -21,14 +21,14 @@
   }
 
   .login-card {
-    background: linear-gradient(145deg, #0b1f2e, #0f2639);
-    padding: 2rem;
-    border-radius: 1.25rem;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.05);
-    width: 100%;
-    max-width: 420px;
-    color: #ffffff;
-  }
+    background: linear-gradient(145deg, #091a27, #0c2132);  /* Slightly darker */
+  padding: 2rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
+  width: 100%;
+  max-width: 420px;
+  color: #ffffff;
+}
 
   .login-card h3 {
     font-weight: 700;
@@ -104,7 +104,7 @@
 }
 
 .form-floating > label {
-  color: #88a9c0;
+  color: #88a9c0; 
 }
 
 .form-floating > .form-control:focus ~ label {
@@ -113,12 +113,96 @@
   transition: all 0.3s ease;
 }
 
+.face-frame {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    border: 3px solid rgba(0, 255, 255, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+  }
+
+  .face-frame::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0, 255, 255, 0.2), transparent, rgba(0, 255, 255, 0.2));
+    animation: scan 2.5s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { top: -100%; }
+    100% { top: 100%; }
+  }
+
+  .face-outline {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    fill: none;
+    stroke: #00ffff;
+    stroke-width: 1.5;
+    opacity: 0.7;
+  }
+
+  .login-inner {
+  gap: 2rem;
+}
+
+/* @media (max-width: 768px) {
+  .login-inner {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .face-frame {
+    margin-bottom: 1rem;
+  }
+} */
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(145deg, #091a27, #0c2132);  /* Slightly darker */
+  border-radius: 1.5rem;
+  padding: 2rem 1rem 2rem 2rem;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
+  gap: 2rem;
+  width: 100%;
+  max-width: 890px;
+}
+
+@media (min-width: 768px) {
+  .login-container {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
 </style>
 
 
 <div class="login-wrapper">
-  <div class="card login-card shadow-sm border-0">
+  
+  <div class="login-container">
+<!-- Face Capture Area -->
+    <div class="face-frame">
+      <svg class="face-outline" width="180" height="220" viewBox="0 0 180 220">
+        <path d="M90,10 
+                 C130,10 160,40 160,80 
+                 C160,130 130,180 90,210 
+                 C50,180 20,130 20,80 
+                 C20,40 50,10 90,10 Z"/>
+      </svg>
+    </div>
 
+  <div class="card login-card shadow-sm border-0">
+    
     <!-- Logo and Branding -->
     <div class="text-center mb-4">
       <h1>Login</h1>
@@ -156,7 +240,7 @@
         <a href="{% url 'register' %}" class="text-decoration-none">Don't have an account? Register</a>
       </div>
     </form>
-
+  </div>
   </div>
 </div>
 
