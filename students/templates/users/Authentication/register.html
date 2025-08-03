@@ -81,25 +81,25 @@
     linear-gradient(
       to right,
       transparent 0%,
-      #00ffff 50%,
+      #33bbff 50%,
       transparent 100%
     ) top left / 200% 2px no-repeat,
     linear-gradient(
       to bottom,
       transparent 0%,
-      #00ffff 50%,
+      #33bbff 50%,
       transparent 100%
     ) top right / 2px 200% no-repeat,
     linear-gradient(
       to left,
       transparent 0%,
-      #00ffff 50%,
+      #33bbff 50%,
       transparent 100%
     ) bottom right / 200% 2px no-repeat,
     linear-gradient(
       to top,
       transparent 0%,
-      #00ffff 50%,
+      #33bbff 50%,
       transparent 100%
     ) bottom left / 2px 200% no-repeat;
 
@@ -144,6 +144,13 @@
       0% 100%;
   }
 }
+
+.glow-white {
+  color: #ffffff;
+  text-shadow:
+    0 0 4px rgba(255, 255, 255, 0.4),
+    0 0 8px rgba(255, 255, 255, 0.3);
+}
   </style>
   
   
@@ -164,7 +171,7 @@
         {% endif %}
 
             <form id="registration-form" method="POST" class="p-4 rounded shadow snake-border">
-                <h2 class="mb-4 text-center fw-bold text-light">Student Registration</h2>
+                <h2 class="mb-4 text-center fw-bold text-light glow-white">Student Registration</h2>
             {% csrf_token %}
 
             <div class="row mb-3">

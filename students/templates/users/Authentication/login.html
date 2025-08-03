@@ -163,7 +163,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   fill: none;
-  stroke: #00ffff;
+  stroke: #33bbff;
   stroke-width: 3; /* From 2 to 3 for bolder outline */
   opacity: 0.85;
   filter: drop-shadow(0 0 5px #00ffff); /* glowing edge */
@@ -193,12 +193,14 @@
   flex-direction: column;
   align-items: center;
   background: linear-gradient(145deg, #091a27, #0c2132);  /* Slightly darker */
-  border-radius: 1.5rem;
-  padding: 2rem 1rem 2rem 2rem;
+  /* border-radius: 1.5rem; */
+  padding: 2rem;
   box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
   gap: 2rem;
   width: 100%;
   max-width: 890px;
+  overflow: hidden; /* Ensures the glowing line doesn’t overflow the border */
+  z-index: 0;
 }
 
 @media (min-width: 768px) {
@@ -207,6 +209,44 @@
     justify-content: center;
   }
 }
+
+/* .login-container::before {
+  content: '';
+  position: absolute;
+  height: 3px;
+  width: 60px;
+  background: linear-gradient(to right, rgba(0, 255, 255, 1), rgba(0, 255, 255, 0));
+  z-index: 2;
+  animation: move-border 6s linear infinite;
+} */
+
+.glow-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.glow-border rect {
+  stroke: #33bbff;
+  stroke-width: 0.6;
+  stroke-dasharray: 30 100; /* Smaller gap for better continuity */
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  animation: glow-loop 3s linear infinite; /* Faster and more dynamic */
+  filter: drop-shadow(0 0 6px #00ffff);
+}
+
+@keyframes glow-loop {
+  to {
+    stroke-dashoffset: -130;
+  }
+}
+
 
 .camera-corners {
   position: absolute;
@@ -219,7 +259,7 @@
   position: absolute;
   width: 30px;
   height: 30px;
-  border: 3px solid #00ffff;
+  border: 3px solid #00ff99;
 }
 
 .corner.tl {
@@ -250,54 +290,21 @@
   border-top: none;
 }
 
-.snake-glow {
-  content: '';
-  position: absolute;
-  width: 60px;
-  height: 4px;
-  background: #00ffff;
-  box-shadow: 0 0 8px #00ffff, 0 0 16px #00ffff;
-  border-radius: 2px;
-  animation: snakeMove 6s linear infinite;
-  z-index: 5;
+.glow-white {
+  color: #ffffff;
+  text-shadow:
+    0 0 4px rgba(255, 255, 255, 0.4),
+    0 0 8px rgba(255, 255, 255, 0.3);
 }
-
-/* Snake animation path */
-@keyframes snakeMove {
-  0% {
-    top: 0;
-    left: 0;
-    transform: translateX(0) rotate(0deg);
-  }
-  25% {
-    top: 0;
-    left: calc(100% - 60px);
-    transform: translateX(0) rotate(90deg);
-  }
-  50% {
-    top: calc(100% - 4px);
-    left: calc(100% - 60px);
-    transform: translateX(0) rotate(180deg);
-  }
-  75% {
-    top: calc(100% - 4px);
-    left: 0;
-    transform: translateX(0) rotate(270deg);
-  }
-  100% {
-    top: 0;
-    left: 0;
-    transform: translateX(0) rotate(360deg);
-  }
-}
-
 </style>
 
 
 <div class="login-wrapper">
 
-  <div class="login-container snake-border">
-    <span class="snake-glow"></span>
+  <div class="login-container">
+    <svg class="glow-border" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <rect x="0" y="0" width="100" height="99.5" rx="0" ry="0" />
+    </svg>
 <!-- Face Capture Area -->
     <div class="face-frame">
 
@@ -320,8 +327,8 @@
   <div class="card login-card shadow-sm border-0">
 
     <!-- Logo and Branding -->
-    <div class="text-center mb-4">
-      <h1>Login</h1>
+    <div class="text-center mb-4 glow-white">
+      <h1>Presence Access</h1>
     </div>
 
     <!-- Error Message -->
@@ -348,7 +355,7 @@
 
       <div class="d-grid">
         <button type="submit" class="btn btn-primary btn-lg">
-          <i class="bi bi-box-arrow-in-right me-2"></i> Login
+          <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
         </button>
       </div>
 
