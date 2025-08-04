@@ -15,9 +15,14 @@
 {% block content %}
 <main id="mainContent">
   <div class="table-container">
-    <h2 class="text-center mb-1">Presence Logs for 
-      <strong>{% now "F d, Y" %}</strong>
+    <div class="text-center mb-4">
+    <h2 class="fw-bold text-uppercase text-primary-emphasis">
+      <i class="bi bi-calendar-check me-2"></i>Presence Logs
     </h2>
+    <p class="text-muted fs-6">
+      for <span class="fw-semibold">{% now "F d, Y" %}</span>
+    </p>
+  </div>
 
     <input type="search" id="searchPresence" class="form-control search-input" placeholder="Search presence records..." />
 
