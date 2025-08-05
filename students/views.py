@@ -19,7 +19,7 @@ from django.utils.timezone import now
 from .models import PresenceLog
 from .utils.utils import archive_last_month_logs
 from .models import ArchivedPresenceLog
-from .models import ArchivedStudent
+from .models import DataAnalysis
 from .utils.encoding_utils import regenerate_encodings  
 import os
 import sys
@@ -27,6 +27,12 @@ from django.http import FileResponse
 from django.core.files.storage import default_storage
 import traceback
 from django.http import HttpResponse
+from datetime import datetime, timedelta, date
+from django.db.models import Sum
+from .decorators import admin_required
+from collections import defaultdict
+import csv
+from django.utils import timezone
 
 # Login / Logout
 def login_view(request):
@@ -199,12 +205,115 @@ def home(request):
         return redirect('login')
     return render(request, 'users/Interface/home.html')
 
-@admin_required
+# ------------------------
+# Load Phrasebank CSV
+# ------------------------
+def load_phrasebank():
+    phrasebank = defaultdict(list)
+    file_path = os.path.join(settings.BASE_DIR, 'data', 'phrasebank.csv')
+    if os.path.exists(file_path):
+        with open(file_path, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                phrasebank[row['category']].append(row['phrase'])
+    return phrasebank
+
+phrasebank = load_phrasebank()
+
+def get_phrase(category):
+    return random.choice(phrasebank[category]) if phrasebank[category] else ""
+
+# Generate human summary
+def generate_summary_text(students, guests, date_label):
+    total = students + guests
+    student_pct = (students / total) * 100 if total > 0 else 0
+    guest_pct = (guests / total) * 100 if total > 0 else 0
+
+    summary = f"On {date_label}, there were approximately {students} unique students and {guests} guests detected. "
+
+    if students > 100:
+        summary += get_phrase('high_student_turnout') + " "
+    elif students < 30:
+        summary += get_phrase('low_student_turnout') + " "
+    else:
+        summary += get_phrase('normal_student_turnout') + " "
+
+    if guest_pct > 40:
+        summary += get_phrase('guest_surge') + " "
+    else:
+        summary += get_phrase('normal_guest') + " "
+
+    summary += get_phrase('general_summary')
+
+    return summary.strip()
+
+# Unified updater
+def update_summary(summary_type, date_obj):
+    if summary_type == 'daily':
+        student_count = PresenceLog.objects.filter(date__date=date_obj, role='student').count()
+        guest_count = PresenceLog.objects.filter(date__date=date_obj, role='guest').count()
+        formatted_label = date_obj.strftime('%Y-%B-%d')
+    elif summary_type == 'weekly':
+        week_start = date_obj - timedelta(days=date_obj.weekday())
+        week_end = week_start + timedelta(days=6)
+        student_count = PresenceLog.objects.filter(date__date__range=(week_start, week_end), role='student').values('student_id').distinct().count()
+        guest_count = PresenceLog.objects.filter(date__date__range=(week_start, week_end), role='guest').values('snapshot').distinct().count()
+        date_obj = week_start
+        formatted_label = week_start.strftime('%Y-%B-%d')
+    elif summary_type == 'monthly':
+        month_start = date_obj.replace(day=1)
+        next_month = (month_start + timedelta(days=32)).replace(day=1)
+        student_count = PresenceLog.objects.filter(date__date__gte=month_start, date__date__lt=next_month, role='student').values('student_id').distinct().count()
+        guest_count = PresenceLog.objects.filter(date__date__gte=month_start, date__date__lt=next_month, role='guest').values('snapshot').distinct().count()
+        date_obj = month_start
+        formatted_label = month_start.strftime('%B %Y')
+    else:
+        return
+
+    summary_text = generate_summary_text(student_count, guest_count, formatted_label)
+
+    DataAnalysis.objects.update_or_create(
+        summary_type=summary_type,
+        summary_date=date_obj,
+        defaults={
+            'student_total': student_count,
+            'guest_total': guest_count,
+            'analysis_summary': summary_text,
+        }
+    )
+
 @login_required
+@admin_required
 def data_analysis(request):
-    if not request.session.get('student_id'):
-        return redirect('login')
-    return render(request, 'users/Admin/data_analysis.html')
+    today = timezone.localdate()
+
+    # Update all summary types
+    for s_type in ['daily', 'weekly', 'monthly']:
+        update_summary(s_type, today)
+
+    # Collect top summary data (latest entries for each type)
+    summary_data = []
+    for s_type in ['daily', 'weekly', 'monthly']:
+        entry = DataAnalysis.objects.filter(summary_type=s_type).order_by('-summary_date').first()
+        if entry:
+            total = entry.student_total + entry.guest_total
+            summary_data.append((
+                s_type,
+                {
+                    'student': entry.student_total,
+                    'guest': entry.guest_total,
+                    'student_percent': round((entry.student_total / total) * 100 if total > 0 else 0, 2),
+                    'guest_percent': round((entry.guest_total / total) * 100 if total > 0 else 0, 2),
+                }
+            ))
+
+    # Full table data
+    analysis_data = DataAnalysis.objects.all().order_by('-summary_date')
+
+    return render(request, 'users/Admin/data_analysis.html', {
+        'summary_data': summary_data,      # used by top summary table
+        'analysis_data': analysis_data     # used by bottom full table
+    })
 
 @login_required
 @admin_required

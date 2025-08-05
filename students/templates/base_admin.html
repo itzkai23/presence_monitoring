@@ -36,124 +36,71 @@
       transform: rotate(0);
       transition: transform 0.2s ease;
     }
-
-    .custom-dropdown-hidden {
-  display: none !important;
-}
   </style>
 </head>
 <body class="d-flex">
-  
 
   <!-- Sidebar -->
- <!-- Sidebar -->
-<nav id="sidebar" class="bg-dark text-white p-3 vh-100">
-  {% block sidebar %}
-
-  <!-- Branding / Logo -->
-  <div class="text-center mb-4">
-    <img src="{% static 'images/logo.png' %}" alt="Admin Logo" width="80" class="mb-2 rounded-circle border border-light">
-    <h5 class="fw-bold mb-0">Student Tracker Admin</h5>
-    <small class="text-muted">Control Panel</small>
-  </div>
-
-  <!-- Info Text -->
-  <div class="mb-4 small text-white-50">
-    The navigation are used to manage presence and student records, monthly logs, and archived records.
-  </div>
-
-  <!-- Sidebar Menu -->
-  <ul class="nav flex-column">
-
-    <!-- Management Section -->
-    <li class="nav-item mb-2">
-      <div class="text-uppercase fw-bold small text-white-50 ps-2">Management</div>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white" href="{% url 'presence_table' %}">
-        <i class="bi bi-clock-history me-2"></i>Presence Records
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white" href="{% url 'student_records' %}">
-        <i class="bi bi-person-lines-fill me-2"></i>Student Records
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
-        <i class="bi bi-calendar-event me-2"></i>Monthly Logs
-      </a>
-    </li>
-
-    <!-- Archived Section -->
-    <li class="nav-item mt-3">
-      <div class="text-uppercase fw-bold small text-white-50 ps-2">Archived</div>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white d-flex justify-content-between align-items-center"
-        data-bs-toggle="collapse"
-        href="#archivedCollapse"
-        role="button"
-        aria-expanded="{% if request.resolver_match.url_name == 'presence_table' or request.resolver_match.url_name == 'student_records' or request.resolver_match.url_name == 'archived_logs' %}true{% else %}false{% endif %}"
-        aria-controls="archivedCollapse">
-        Archived Records
-        <i class="bi bi-caret-down-fill"></i>
-      </a>
-      <div class="collapse {% if request.resolver_match.url_name == 'presence_table' or request.resolver_match.url_name == 'student_records' or request.resolver_match.url_name == 'archived_logs' %}show{% endif %}"
-        id="archivedCollapse">
-        <ul class="nav flex-column ps-4 mt-1">
-          <li class="nav-item">
-            <a class="nav-link text-white" href="{% url 'archived_logs' %}">
-              <i class="bi bi-box me-2"></i>Archived Logs
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-white" href="{% url 'archived_students' %}">
-              <i class="bi bi-archive me-2"></i>Archived Students
-            </a>
-          </li>
-        </ul>
-      </div>
-    </li>
-  </ul>
-  {% endblock %}
-</nav>
-
+  <nav id="sidebar" class="bg-dark text-white p-3 vh-100">
+    {% block sidebar %}
+    <h5 class="text-white mb-4">Navigation</h5>
+    <ul class="nav flex-column">
+      <!-- Top-level links -->
+      <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'presence_table' %}">
+          <i class="bi bi-clock-history me-2"></i>Presence Records
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'student_records' %}">
+          <i class="bi bi-person-lines-fill me-2"></i>Student Records
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
+          <i class="bi bi-calendar-event"></i> Monthly Logs
+        </a>
+      </li>
+       <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'data_analysis' %}">
+          <i class="bi bi-bar-chart-line"></i> Data Analysis
+        </a>
+      </li>
+      
+     <!-- Archived Section -->
+      <li class="nav-item">
+        <a class="nav-link text-white d-flex justify-content-between align-items-center"
+          data-bs-toggle="collapse" href="#archivedCollapse" role="button"
+          aria-expanded="false" aria-controls="archivedCollapse">
+           <i class="bi bi-archive"></i> Archived Records
+          <i class="bi bi-caret-down-fill"></i>
+        </a>
+        <div class="collapse" id="archivedCollapse">
+          <ul class="nav flex-column ps-4 mt-1">
+            <li class="nav-item">
+              <a class="nav-link text-white" href="{% url 'archived_logs' %}"><i class="bi bi-box me-2"></i> Archived Logs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white" href="{% url 'archived_students' %}">🧊 Archived Students</a>
+            </li>
+          </ul>
+        </div>
+      </li>
+    {% endblock %}
+  </nav>
 
   <!-- Page Content -->
   <div class="flex-grow-1 d-flex flex-column">
     <!-- Header -->
-<header class="d-flex align-items-center justify-content-between bg-white border-bottom shadow-sm px-4" style="height: 64px;">
-  <!-- Left section: Logo + Title -->
-  <div class="d-flex align-items-center gap-2">
-    <h5 class="mb-0 fw-semibold text-dark">Admin Dashboard</h5>
-  </div>
-
-<!-- Right section: Custom Profile Dropdown -->
-<div class="position-relative" id="customProfileDropdown">
-  <button class="btn d-flex align-items-center gap-2 border-0 bg-white text-dark text-decoration-none" id="profileToggleBtn" type="button">
-    <img src="{% static 'images/avatar.png' %}" width="36" height="36" class="rounded-circle">
-    <span class="d-none d-md-inline text-dark">
-      {{ request.user.get_full_name|default:request.user.username }}
-    </span>
-    <i class="bi bi-caret-down-fill text-dark"></i>
-  </button>
-
-  <div id="dropdownMenu" class="position-absolute end-0 mt-2 py-2 bg-white border rounded shadow-sm custom-dropdown-hidden" style="min-width: 180px; z-index: 999;">
-    <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark text-decoration-none" href="#">
-      <i class="bi bi-gear fs-5"></i> Settings
-    </a>
-    <form action="{% url 'logout' %}" method="post" class="m-0">
-      {% csrf_token %}
-      <button type="submit" class="dropdown-item d-flex align-items-center gap-2 w-100 px-3 py-2 text-danger border-0 bg-white text-start">
-        <i class="bi bi-box-arrow-right fs-5 text-danger"></i> Logout
-      </button>
-    </form>
-  </div>
-</div>
-
-</header>
-
+    <header class="d-flex align-items-center justify-content-between bg-light border-bottom p-3">
+      <div class="d-flex align-items-center">
+        <h5 class="mb-0">Admin Dashboard</h5>
+      </div>
+      <form action="{% url 'logout' %}" method="post" class="mb-0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-danger">Logout</button>
+      </form>
+    </header>
 
     <!-- Main Content -->
     <main class="p-4 overflow-auto" style="flex-grow: 1;">
@@ -167,27 +114,7 @@
   <!-- Optional Page JS -->
   {% block extra_js %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const toggleBtn = document.getElementById("profileToggleBtn");
-      const dropdownMenu = document.getElementById("dropdownMenu");
-      const profileWrapper = document.getElementById("customProfileDropdown");
-  
-      toggleBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle("custom-dropdown-hidden");
-      });
-  
-      document.addEventListener("click", function (e) {
-        if (!profileWrapper.contains(e.target)) {
-          dropdownMenu.classList.add("custom-dropdown-hidden");
-        }
-      });
-    });
-  </script>
-  
   <script src="{% static 'scripts/admin_page.js' %}"></script>
-  
   {% endblock %}
 </body>
 </html>

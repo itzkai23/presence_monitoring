@@ -1,62 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Data Analysis Table</title>
-  <!-- Bootstrap CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+{% extends 'base_admin.html' %}
+{% load static %}
 
-  <div class="container mt-5">
-    <h2 class="mb-4 text-center">Data Analysis Table</h2>
-    <div class="table-responsive">
-      <table class="table table-bordered table-hover table-striped align-middle">
-        <thead class="table-primary">
-          <tr>
-            <th>ID</th>
-            <th>SUMMARY</th>
-            <th>LABEL</th>
-            <th>DATE</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>High number of absentees detected on Monday.</td>
-            <td><span class="badge bg-danger">Alert</span></td>
-            <td>2025-07-01</td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td>Normal attendance pattern observed throughout the week.</td>
-            <td><span class="badge bg-success">Normal</span></td>
-            <td>2025-07-01</td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>Spike in attendance during examination week.</td>
-            <td><span class="badge bg-info text-dark">Info</span></td>
-            <td>2025-06-25</td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td>System detected face mismatch in one student log.</td>
-            <td><span class="badge bg-warning text-dark">Warning</span></td>
-            <td>2025-06-23</td>
-          </tr>
-          <tr>
-            <td>5</td>
-            <td>All facial records matched successfully today.</td>
-            <td><span class="badge bg-success">Normal</span></td>
-            <td>2025-06-20</td>
-          </tr>
-        </tbody>
-      </table>
+{% block title %}Data Analysis{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center mb-4">📊 Presence Data Analytics</h2>
+
+  <!-- 🔹 Minimal Daily, Weekly, Monthly Summary (Single Entry Only) -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white py-2">
+      <h5 class="mb-0">Today's Presence Summary</h5>
+    </div>
+    <div class="card-body p-3">
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered text-center align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Period</th>
+              <th>Students</th>
+              <th>Guests</th>
+              <th>Student %</th>
+              <th>Guest %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for label, counts in summary_data %}
+              <tr>
+                <td>{{ label|title }}</td>
+                <td>{{ counts.student }}</td>
+                <td>{{ counts.guest }}</td>
+                <td>{{ counts.student_percent }}%</td>
+                <td>{{ counts.guest_percent }}%</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5">No summary data available for today.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS Bundle (optional but useful if you add dropdowns etc.) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+  <!-- 🔹 Full Summary Analysis Table -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white py-2">
+      <h5 class="mb-0">Summary Analysis Table</h5>
+    </div>
+    <div class="card-body p-3">
+      {% if analysis_data %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped align-middle text-center">
+          <thead class="table-primary">
+            <tr>
+              <th>ID</th>
+              <th>Summary</th>
+              <th>Label</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in analysis_data %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td class="text-start">{{ item.analysis_summary }}</td>
+              <td>
+                {% if item.summary_type == 'daily' %}
+                  <span class="badge bg-info text-dark">Day</span>
+                {% elif item.summary_type == 'weekly' %}
+                  <span class="badge bg-success">Week</span>
+                {% elif item.summary_type == 'monthly' %}
+                  <span class="badge bg-warning text-dark">Month</span>
+                {% else %}
+                  <span class="badge bg-secondary">Unknown</span>
+                {% endif %}
+              </td>
+              <td>{{ item.summary_date }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info text-center" role="alert">
+        No data analysis records found.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

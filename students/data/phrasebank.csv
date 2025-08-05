@@ -1,0 +1,19 @@
+category,phrase
+high_student_turnout,"There was a noticeable increase in student presence, possibly due to major academic schedules."
+high_student_turnout,"The campus saw a surge of students, likely linked to events or peak enrollment."
+high_student_turnout,"A large number of students were present, indicating heightened campus activity."
+low_student_turnout,"Student turnout was relatively low, suggesting a break or special schedule."
+low_student_turnout,"Few students appeared on campus, potentially due to holidays or suspended classes."
+low_student_turnout,"Student presence dipped, which may be attributed to non-academic days."
+normal_student_turnout,"Student attendance was stable, reflecting consistent engagement."
+normal_student_turnout,"A moderate number of students were detected, suggesting regular activity."
+normal_student_turnout,The number of students matched typical weekday presence.
+guest_surge,"Guest traffic was unusually high, possibly due to external events or parent visits."
+guest_surge,A spike in guest entries suggests campus events or consultations.
+guest_surge,The increase in guests could relate to special meetings or programs.
+normal_guest,Guest presence remained at manageable levels.
+normal_guest,There were no unusual guest traffic patterns.
+normal_guest,Guest entries followed regular trends.
+general_summary,"Overall, the day reflected a balance between student and guest activity."
+general_summary,The university maintained a healthy flow of individuals on campus.
+general_summary,No significant anomalies were observed in presence data.
