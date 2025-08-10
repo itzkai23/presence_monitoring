@@ -15,21 +15,18 @@ class StudentRegistrationForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_course'})
     )
 
-    year_level = forms.ChoiceField(
-        choices=[(level, level) for level in settings.YEAR_LEVELS],
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 
-        'placeholder': 'Enter your password'
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your password'
         }),
         label='Password'
     )
 
     password_confirm = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 
-        'placeholder': 'Enter your confirm password'
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your confirm password'
         }),
         label='Confirm Password'
     )
@@ -51,8 +48,7 @@ class StudentRegistrationForm(forms.ModelForm):
         model = Student
         fields = [
             'student_id', 'first_name', 'last_name', 'email',
-            'department', 'course', 'section', 'year_level',
-            'password'
+            'department', 'course', 'password'
         ]
         labels = {
             'student_id': 'Student ID',
@@ -61,29 +57,25 @@ class StudentRegistrationForm(forms.ModelForm):
             'email': 'Email',
             'department': 'Department',
             'course': 'Course',
-            'section': 'Section',
-            'year_level': 'Year Level',
             'password': 'Password',
         }
         widgets = {
             'student_id': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter your student id'
-                }),
+            }),
             'first_name': forms.TextInput(attrs={
-                'class': 'form-control', 
+                'class': 'form-control',
                 'placeholder': 'Enter your first name'
-                }),
+            }),
             'last_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter your last name'
-                }),
-
+            }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Use your university email',
             }),
-            'section': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '*BSIT-3G'}),
         }
 
     def clean_email(self):

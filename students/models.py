@@ -7,13 +7,6 @@ from django.utils import timezone
 # ----------------------------
 
 class Student(models.Model):
-    YEAR_CHOICES = [
-        ('1st Year', '1st Year'),
-        ('2nd Year', '2nd Year'),
-        ('3rd Year', '3rd Year'),
-        ('4th Year', '4th Year'),
-    ]
-
     DEPARTMENT_CHOICES = [
         ('CAS', 'College of Arts and Science (CAS)'),
         ('CCJE', 'College of Criminal Justice Education (CCJE)'),
@@ -28,8 +21,6 @@ class Student(models.Model):
     email = models.EmailField(unique=True)
     department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES)
     course = models.CharField(max_length=100)
-    year_level = models.CharField(max_length=10, choices=YEAR_CHOICES, default='1st Year')
-    section = models.CharField(max_length=20)
     password = models.CharField(max_length=255)
     photo = models.ImageField(upload_to='student_photos/', blank=True, null=True)
     is_archived = models.BooleanField(default=False) 
@@ -81,3 +72,32 @@ class ArchivedPresenceLog(models.Model):
 
     def __str__(self):
         return f"Archived PresenceLog ID {self.reference.id if self.reference else 'Unknown'}"
+    
+# ----------------------------
+# ✅ Daily, Weekly, Monthly Summaries
+
+class DataAnalysis(models.Model):
+    SUMMARY_TYPE_CHOICES = [
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+
+    summary_type = models.CharField(max_length=10, choices=SUMMARY_TYPE_CHOICES)
+    summary_date = models.DateField()  # This will be day, week_start, or month_start
+    student_total = models.IntegerField(default=0)
+    guest_total = models.IntegerField(default=0)
+    analysis_summary = models.TextField()
+
+    class Meta:
+        unique_together = ('summary_type', 'summary_date')
+
+    def __str__(self):
+        return f"{self.get_summary_type_display().title()} - {self.summary_date}"
+
+class ArchivedDataAnalysis(models.Model):
+    reference = models.ForeignKey(DataAnalysis, on_delete=models.SET_NULL, null=True, blank=True)
+    archived_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Archived Summary {self.reference_id if self.reference else 'Unknown'}"

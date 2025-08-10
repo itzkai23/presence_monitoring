@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/student_logs/', views.student_logs_api, name='student_logs_api'),
     path('archived-students/', views.archived_students, name='archived_students'),
     path('encodings.pkl', views.serve_encodings, name='serve_encodings'),
+    path('archived-analysis/', views.archived_analysis_view, name='archived_analysis'),
 
     # ✅ NEW: Presence log API for frontend
     path('get-presence-logs/', views.get_presence_logs, name='get_presence_logs'),
