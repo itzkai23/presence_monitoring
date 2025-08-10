@@ -1,0 +1,83 @@
+category,phrase
+
+# 🎓 High Student Turnout
+high_student_turnout,There was a surge in student activity, indicating strong engagement or academic schedules.
+high_student_turnout,Student turnout exceeded typical levels, suggesting peak academic periods.
+high_student_turnout,A higher number of students were present than usual, which could be tied to exams or events.
+high_student_turnout,Significant student traffic was observed on campus, reflecting increased academic or extracurricular activity.
+
+# 💤 Low Student Turnout
+low_student_turnout,Student attendance was notably low, possibly due to holidays or system irregularities.
+low_student_turnout,Fewer students were observed on campus, which may indicate reduced academic schedules.
+low_student_turnout,There was a drop in student activity, potentially due to non-class days or weather disruptions.
+low_student_turnout,Low student turnout suggests either an off-day or underutilization of campus facilities.
+
+# ⚖️ Normal Student Turnout
+normal_student_turnout,Student presence was within typical levels for the observed period.
+normal_student_turnout,No major fluctuation in student turnout was observed, reflecting steady attendance.
+normal_student_turnout,Student activity remained stable and aligned with routine expectations.
+
+# 🚶‍♂️ Guest Surge
+guest_surge,Guest presence was unusually high, indicating possible events or external campus activities.
+guest_surge,A considerable number of guests accessed the campus, which may require additional security oversight.
+guest_surge,The influx of guests suggests public interactions or administrative visits.
+guest_surge,There was a spike in guest traffic, possibly tied to public seminars, deliveries, or events.
+
+# 🧍 Normal Guest Presence
+normal_guest,Guest entry levels remained consistent with usual patterns.
+normal_guest,Guest traffic showed no significant anomalies.
+normal_guest,The number of guests observed was within expected operational norms.
+normal_guest,No unusual guest activity detected during this period.
+
+# 🧠 General Summary Closing
+general_summary,Continued monitoring is advised to maintain safety and operational efficiency.
+general_summary,No critical alerts were raised, but regular assessments are recommended.
+general_summary,Overall, the data suggests operational normalcy with expected behavior patterns.
+general_summary,The system functioned as intended during this period.
+general_summary,Further data over time will help detect deeper behavioral trends.
+
+# 🏛️ Top Department
+top_department,Most students detected were from the **{department}**, suggesting heightened activity in this unit.
+top_department,The **{department}** recorded the highest number of student logs during this period.
+top_department,A concentration of student activity was observed in the **{department}**.
+top_department,The **{department}** had the most entries, which could indicate intensive academic operations or events.
+
+# 🧑‍🎓 Top Course
+top_course,Students enrolled in **{course}** had the highest recorded presence.
+top_course,The course **{course}** dominated student presence logs for this period.
+top_course,Majority of the student entries belonged to the **{course}** program.
+top_course,**{course}** students appeared more frequently, possibly due to clustered schedules or assessments.
+
+# 🧑‍🏫 Top Purpose
+top_purpose,Students frequently logged presence for **{purpose}** during this period.
+top_purpose,The purpose **{purpose}** was the most common reason for campus entry.
+top_purpose,Most visits were associated with **{purpose}** activities.
+top_purpose,**{purpose}** emerged as the leading reason for student presence.
+top_purpose,A significant number of entries were for **{purpose}**, indicating peak academic or event activity.
+top_purpose,Campus logs show heightened presence tied to **{purpose}**.
+top_purpose,**{purpose}** remained the primary intent for student visits across this period.
+
+top_student_purpose,Most students entered the campus for {purpose}.
+top_student_purpose,Student presence was largely driven by {purpose} activities.
+top_student_purpose,{purpose} was the most common reason among students.
+top_student_purpose,A surge in student presence was observed due to {purpose}.
+top_guest_purpose,Most guests visited for {purpose}.
+top_guest_purpose,Guest entries were primarily for {purpose}.
+top_guest_purpose,{purpose} was the most frequent reason for guest visits.
+top_guest_purpose,Guest presence was mainly related to {purpose} purposes.
+
+# 📅 Peak Day
+peak_day,**{day}** had the highest number of individuals entering the campus.
+peak_day,The busiest day of the week was **{day}**, indicating possible schedule density or events.
+peak_day,Campus activity peaked on **{day}**, which could be due to faculty schedules or major events.
+peak_day,**{day}** was the most active in terms of student and guest presence.
+
+# 🔐 Security Recommendation - High Guest Activity
+security_guest_surge,Heightened guest activity suggests the need for tighter visitor screening and check-in procedures.
+security_guest_surge,Due to the surge in guest presence, it's recommended to review external access points and increase guard visibility.
+security_guest_surge,Elevated guest entry may warrant additional logging and camera coverage in entry zones.
+
+# 🛡️ Security Recommendation - High Student Traffic
+security_student_surge,Consider managing congestion in hallways or common areas due to high student foot traffic.
+security_student_surge,Increased student turnout may require hallway monitors or adjusted break schedules.
+security_student_surge,Surveillance in academic blocks may help manage crowd density during peak student hours.
