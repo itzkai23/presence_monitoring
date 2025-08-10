@@ -81,10 +81,10 @@ body::after {
   }
 
   .login-card {
-    background: linear-gradient(145deg, #091a27, #0c2132);  /* Slightly darker */
+    background: #091a27 ;  /* Slightly darker */
   padding: 2rem;
   border-radius: 1.5rem;
-  box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
+  /* box-shadow: 0 0 25px rgba(0, 255, 255, 0.1); */
   width: 100%;
   max-width: 420px;
   color: #ffffff;
@@ -212,23 +212,34 @@ body::after {
   }
 }
 
-.face-outline {
-  animation: pulse-outline 2.5s ease-in-out infinite;
+@media (prefers-reduced-motion: reduce) {
+  .shape {
+    animation: none;
+  }
+  .face-frame::before {
+    animation: none;
+  }
 }
 
 
-  .face-outline {
+.face-outline {
+  animation: pulse-outline 2.5s ease-in-out infinite;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   fill: none;
   stroke: #33bbff;
-  stroke-width: 3; /* From 2 to 3 for bolder outline */
+  stroke-width: 3; /* Standard outline thickness */
   opacity: 0.85;
-  filter: drop-shadow(0 0 5px #00ffff); /* glowing edge */
+  filter: drop-shadow(0 0 5px #00ffff); /* Glow effect */
   pointer-events: none;
-  z-index: 2; /* Add this to make sure it's on top */
+  z-index: 2;
+}
+
+@keyframes pulse-outline {
+  0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 5px #00ffff); }
+  50% { opacity: 1; filter: drop-shadow(0 0 10px #00ffff); }
 }
 
 
@@ -252,7 +263,8 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(145deg, #091a27, #0c2132);  /* Slightly darker */
+  background: #091a27;  /* Slightly darker */
+  /* background: linear-gradient(145deg, #091a27, #0c2132); */
   /* border-radius: 1.5rem; */
   padding: 2rem;
   box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
@@ -381,12 +393,18 @@ body::after {
         <div class="corner br"></div>
       </div>  
 
-      <svg class="face-outline" width="180" height="220" viewBox="0 0 180 220">
-        <path d="M90,10 
-                 C130,10 160,40 160,80 
-                 C160,130 130,180 90,210 
-                 C50,180 20,130 20,80 
-                 C20,40 50,10 90,10 Z"/>
+      <svg class="face-outline" width="180" height="220" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+        <!-- Balanced head + smooth chin + curved shoulders -->
+        <path d="M100,25
+                 C135,25 160,55 160,95
+                 C160,140 135,165 120,170
+                 C145,180 165,200 180,230
+                 L20,230
+                 C35,200 55,180 80,170
+                 C65,165 40,140 40,95
+                 C40,55 65,25 100,25 Z"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
       </svg>
     </div>
 

@@ -83,9 +83,9 @@
   <button class="btn bg-transparent border-0" id="guestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
     <i class="bi bi-person-circle fs-4 text-secondary"></i>
   </button>
-  <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="guestDropdown">
-    <li><a class="dropdown-item" href="{% url 'register' %}"><i class="bi bi-person-plus me-2"></i>Sign Up</a></li>
-    <li><a class="dropdown-item" href="{% url 'login' %}"><i class="bi bi-person me-2"></i>Login</a></li>
+  <ul class="dropdown-menu dropdown-menu-end bg-dark mt-2" aria-labelledby="guestDropdown">
+    <li><a class="dropdown-item text-secondary fw-bold bg-transparent link-light link-hover-glow" href="{% url 'register' %}"><i class="bi bi-person-plus text-secondary me-2"></i>Sign Up</a></li>
+    <li><a class="dropdown-item text-secondary fw-bold bg-transparent link-light link-hover-glow" href="{% url 'login' %}"><i class="bi bi-person text-secondary me-2"></i>Login</a></li>
   </ul>
 </div>
 {% endif %}
