@@ -16,16 +16,15 @@ import json
 import base64
 from django.conf import settings
 from django.utils.timezone import now
-from .models import PresenceLog
-from .utils.utils import archive_last_month_logs
-from .models import ArchivedPresenceLog
-from .models import DataAnalysis
+from .utils.utils import archive_last_month_logs, archive_last_month_analysis
+from .models import DataAnalysis, ArchivedDataAnalysis, ArchivedPresenceLog, PresenceLog
 from .utils.encoding_utils import regenerate_encodings  
 import os
 import sys
 from django.http import FileResponse
 from django.core.files.storage import default_storage
 import traceback
+import pandas as pd
 from django.http import HttpResponse
 from datetime import datetime, timedelta, date
 from django.db.models import Sum
@@ -33,6 +32,18 @@ from .decorators import admin_required
 from collections import defaultdict
 import csv
 from django.utils import timezone
+from collections import Counter
+import pickle
+MODEL_PATH = os.path.join(settings.BASE_DIR, 'students', 'model', 'ml_model.pkl')
+with open(MODEL_PATH, 'rb') as file:
+    ml_model = pickle.load(file)
+import joblib
+import numpy as np
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from calendar import monthrange
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
+import calendar
 
 # Login / Logout
 def login_view(request):
@@ -223,97 +234,659 @@ phrasebank = load_phrasebank()
 def get_phrase(category):
     return random.choice(phrasebank[category]) if phrasebank[category] else ""
 
-# Generate human summary
-def generate_summary_text(students, guests, date_label):
-    total = students + guests
-    student_pct = (students / total) * 100 if total > 0 else 0
-    guest_pct = (guests / total) * 100 if total > 0 else 0
+# ----------------------------
+# Lazy-load ML model (safe)
+# ----------------------------
+_ml_model = None
+def get_ml_model():
+    global _ml_model
+    if _ml_model is None:
+        try:
+            model_path = os.path.join(os.path.dirname(__file__), "model", "ml_model.pkl")
+            if os.path.exists(model_path):
+                _ml_model = joblib.load(model_path)
+            else:
+                _ml_model = None
+        except Exception:
+            _ml_model = None
+    return _ml_model
 
-    summary = f"On {date_label}, there were approximately {students} unique students and {guests} guests detected. "
+# ----------------------------
+# Helper Functions
+# ----------------------------
+def interpret_purpose(purpose_counts):
+    """Return human-friendly interpretation of the dominant and top purposes."""
+    if not purpose_counts:
+        return "No purposes recorded."
 
-    if students > 100:
-        summary += get_phrase('high_student_turnout') + " "
-    elif students < 30:
-        summary += get_phrase('low_student_turnout') + " "
+    total_purposes = sum(purpose_counts.values())
+    sorted_purposes = sorted(purpose_counts.items(), key=lambda x: x[1], reverse=True)
+
+    meaning_map = {
+        "class": "indicates regular academic activity.",
+        "study": "suggests students are utilizing campus resources for independent or group work.",
+        "appointment": "implies planned meetings or consultations.",
+        "event": "may indicate special gatherings affecting traffic flow.",
+        "visit": "suggests non-academic guest interactions.",
+        "delivery": "highlights logistical and supply movements on campus."
+    }
+
+    top_purposes_texts = []
+    for i, (purpose, count) in enumerate(sorted_purposes[:3]):
+        pct = (count / total_purposes) * 100 if total_purposes > 0 else 0
+        meaning = meaning_map.get(purpose, "shows a unique activity pattern.")
+        top_purposes_texts.append(f"**{purpose}** ({pct:.1f}%) which {meaning}")
+
+    if len(top_purposes_texts) == 1:
+        return f"The dominant purpose was {top_purposes_texts[0]}"
     else:
-        summary += get_phrase('normal_student_turnout') + " "
+        joined = "; ".join(top_purposes_texts)
+        return f"The top purposes were: {joined}."
 
-    if guest_pct > 40:
-        summary += get_phrase('guest_surge') + " "
+def security_suggestions(guest_count, student_count, total, peak_metric, context):
+    """Group-level security suggestions based on counts and peaks."""
+    suggestions = []
+    if guest_count > student_count:
+        suggestions.append("Consider tighter guest check-in and ID verification.")
+    if peak_metric and peak_metric > (total * 0.3):
+        suggestions.append(f"Increase security personnel during peak {context} to manage high traffic.")
+    if total > 50:
+        suggestions.append("Install automated counting systems to track movement in real-time.")
+    return " ".join(suggestions) if suggestions else "Current security measures appear sufficient for recorded traffic."
+
+# ----------------------------
+# Forecast helper (tries ML, falls back to rolling mean)
+# ----------------------------
+def forecast_next_count(period, reference_date):
+    """
+    period: 'daily', 'weekly', 'monthly'
+    reference_date: date object (for daily), week_start date (for weekly), month-start date (for monthly)
+    """
+    ml = get_ml_model()
+    # We will attempt to use a very simple feature (total_count) if model can accept it,
+    # otherwise fall back to rolling mean from DB counts.
+    try:
+        if period == 'daily':
+            # get last 14 days counts (excluding reference_date)
+            qs = PresenceLog.objects.filter(date__date__gte=(reference_date - timedelta(days=14)),
+                                            date__date__lt=reference_date)
+            days = qs.annotate(day=TruncDate('date')).values('day').annotate(cnt=Count('id')).order_by('day')
+            counts = [d['cnt'] for d in days]
+            if ml and counts:
+                total = sum(counts[-7:]) if len(counts) >= 1 else 0
+                try:
+                    pred = ml.predict([[int(total)]])
+                    return int(np.round(pred[0]))
+                except Exception:
+                    return int(round(np.mean(counts[-7:])) if counts else 0)
+            else:
+                return int(round(np.mean(counts[-7:])) if counts else 0)
+
+        elif period == 'weekly':
+            # last 8 weeks counts
+            qs = PresenceLog.objects.annotate(week=TruncWeek('date')).values('week').annotate(cnt=Count('id')).order_by('week')
+            weeks = [w['cnt'] for w in qs if w['week'].date() < reference_date]
+            if ml and weeks:
+                total = sum(weeks[-4:]) if len(weeks) >= 1 else 0
+                try:
+                    pred = ml.predict([[int(total)]])
+                    return int(np.round(pred[0]))
+                except Exception:
+                    return int(round(np.mean(weeks[-3:])) if weeks else 0)
+            else:
+                return int(round(np.mean(weeks[-3:])) if weeks else 0)
+
+        else:  # monthly
+            qs = PresenceLog.objects.annotate(month=TruncMonth('date')).values('month').annotate(cnt=Count('id')).order_by('month')
+            months = [m['cnt'] for m in qs if m['month'].date() < reference_date]
+            if ml and months:
+                total = sum(months[-3:]) if len(months) >= 1 else 0
+                try:
+                    pred = ml.predict([[int(total)]])
+                    return int(np.round(pred[0]))
+                except Exception:
+                    return int(round(np.mean(months[-3:])) if months else 0)
+            else:
+                return int(round(np.mean(months[-3:])) if months else 0)
+
+    except Exception:
+        return 0
+
+# ----------------------------
+# Summary Generators (expect presence_data to be a DataFrame where 'date' is datetime)
+# ----------------------------
+def generate_daily_summary(presence_data, current_date):
+    # Ensure dates are comparable
+    current_date_only = current_date if isinstance(current_date, date) else current_date.date()
+    day_df = presence_data[presence_data['date'].dt.date == current_date_only].copy()
+
+    # Early return if no records for this date
+    if day_df.empty:
+        readable_date = current_date_only.strftime("%A, %B %d, %Y")
+        return f"No summary to display for {readable_date}."
+
+    # Get previous day's data
+    prev_date_only = current_date_only - timedelta(days=1)
+    prev_df = presence_data[presence_data['date'].dt.date == prev_date_only].copy()
+
+    total = len(day_df)
+    students = int((day_df['role'].str.lower() == 'student').sum()) if 'role' in day_df else 0
+    guests = int((day_df['role'].str.lower() == 'guest').sum()) if 'role' in day_df else 0
+
+    top_dept = None
+    if not day_df[day_df['role'].str.lower() == 'student'].empty:
+        dept_counts = day_df[day_df['role'].str.lower() == 'student']['department'].value_counts()
+        top_dept = dept_counts.idxmax() if not dept_counts.empty else None
+
+    purposes = day_df['purpose'].value_counts().to_dict() if 'purpose' in day_df else {}
+
+    peak_hour = None
+    try:
+        peak_hour = int(day_df['date'].dt.hour.value_counts().idxmax())
+    except Exception:
+        pass
+
+    # Directly handle trend comparison without compare_to_previous()
+    if prev_df.empty:
+        trend_text = "No previous day's data available for comparison."
     else:
-        summary += get_phrase('normal_guest') + " "
+        prev_total = len(prev_df)
+        if prev_total == 0:
+            trend_text = "Previous day had zero entries, so no percentage change can be calculated."
+        else:
+            diff = total - prev_total
+            pct_change = (diff / prev_total) * 100
+            if diff > 0:
+                trend_text = f"An increase of {diff} entries ({pct_change:.1f}%) compared to the previous day."
+            elif diff < 0:
+                trend_text = f"A decrease of {abs(diff)} entries ({abs(pct_change):.1f}%) compared to the previous day."
+            else:
+                trend_text = "No change compared to the previous day."
 
-    summary += get_phrase('general_summary')
+    forecast = forecast_next_count('daily', current_date_only)
+
+    high_traffic = 0
+    try:
+        ml = get_ml_model()
+        if ml is not None:
+            try:
+                pred = ml.predict([[int(total)]])
+                if isinstance(pred[0], (int, float)):
+                    high_traffic = int(pred[0] > 0)
+                else:
+                    high_traffic = 1 if str(pred[0]).lower() in ("high", "1", "true", "yes") else 0
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    readable_date = current_date_only.strftime("%A, %B %d, %Y")
+    summary = f"On {readable_date}, a total of {total} presence entries were logged. "
+    summary += f"{high_traffic} entries were flagged as high-traffic indicators. " if high_traffic else ""
+    summary += f"Out of {total} entries, {students} were students ({(students/total*100):.1f}%) and {guests} were guests ({(guests/total*100):.1f}%). "
+    if top_dept:
+        summary += f"The department with the most student entries was {top_dept}. "
+    if purposes:
+        summary += interpret_purpose(purposes) + " "
+    if peak_hour is not None:
+        summary += f"Peak presence hour was around {peak_hour}:00. "
+    summary += trend_text + " "
+    summary += f"Forecast for tomorrow: approximately {forecast} entries. "
+    summary += security_suggestions(
+        guests, students, total,
+        day_df['date'].dt.hour.value_counts().max() if not day_df.empty else 0,
+        'hour'
+    )
 
     return summary.strip()
 
-# Unified updater
-def update_summary(summary_type, date_obj):
-    if summary_type == 'daily':
-        student_count = PresenceLog.objects.filter(date__date=date_obj, role='student').count()
-        guest_count = PresenceLog.objects.filter(date__date=date_obj, role='guest').count()
-        formatted_label = date_obj.strftime('%Y-%B-%d')
-    elif summary_type == 'weekly':
-        week_start = date_obj - timedelta(days=date_obj.weekday())
-        week_end = week_start + timedelta(days=6)
-        student_count = PresenceLog.objects.filter(date__date__range=(week_start, week_end), role='student').values('student_id').distinct().count()
-        guest_count = PresenceLog.objects.filter(date__date__range=(week_start, week_end), role='guest').values('snapshot').distinct().count()
-        date_obj = week_start
-        formatted_label = week_start.strftime('%Y-%B-%d')
-    elif summary_type == 'monthly':
-        month_start = date_obj.replace(day=1)
-        next_month = (month_start + timedelta(days=32)).replace(day=1)
-        student_count = PresenceLog.objects.filter(date__date__gte=month_start, date__date__lt=next_month, role='student').values('student_id').distinct().count()
-        guest_count = PresenceLog.objects.filter(date__date__gte=month_start, date__date__lt=next_month, role='guest').values('snapshot').distinct().count()
-        date_obj = month_start
-        formatted_label = month_start.strftime('%B %Y')
+def generate_weekly_summary(presence_data, reference_date):
+    """
+    Generates a summary for the week starting Monday and ending Sunday.
+    If reference_date is Sunday, use the Monday of that same week.
+    """
+    # Align to Monday start
+    week_start = reference_date - timedelta(days=reference_date.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    # Filter for this week's range (Mon → Sun)
+    week_df = presence_data[
+        (presence_data['date'].dt.date >= week_start) &
+        (presence_data['date'].dt.date <= week_end)
+    ].copy()
+
+    # Previous week range
+    prev_week_start = week_start - timedelta(days=7)
+    prev_week_end = prev_week_start + timedelta(days=6)
+    prev_df = presence_data[
+        (presence_data['date'].dt.date >= prev_week_start) &
+        (presence_data['date'].dt.date <= prev_week_end)
+    ].copy()
+
+    students = len(week_df.loc[week_df['role'].str.lower() == 'student', 'id'].unique()) \
+        if 'role' in week_df.columns and 'id' in week_df.columns else 0
+    guests = len(week_df.loc[week_df['role'].str.lower() == 'guest', 'id'].unique()) \
+        if 'role' in week_df.columns and 'id' in week_df.columns else 0
+    total = students + guests
+
+    # Top department
+    top_dept = None
+    if 'role' in week_df.columns and 'department' in week_df.columns:
+        student_df = week_df[week_df['role'].str.lower() == 'student']
+        if not student_df.empty:
+            dept_counts = student_df['department'].value_counts()
+            top_dept = dept_counts.idxmax() if not dept_counts.empty else None
+
+    purposes = week_df['purpose'].value_counts().to_dict() if 'purpose' in week_df.columns else {}
+    peak_day = week_df['date'].dt.day_name().value_counts().idxmax() if not week_df.empty else None
+
+    # Compare with previous week
+    prev_students = len(prev_df.loc[prev_df['role'].str.lower() == 'student', 'id'].unique())
+    prev_guests = len(prev_df.loc[prev_df['role'].str.lower() == 'guest', 'id'].unique())
+    prev_total = prev_students + prev_guests
+
+    if prev_total == 0:
+        trend_text = "No previous data available for comparison."
     else:
+        diff = total - prev_total
+        pct = (diff / prev_total) * 100
+        if diff > 0:
+            trend_text = f"This is an increase of {abs(diff)} entries ({pct:.1f}%) compared to the previous week."
+        elif diff < 0:
+            trend_text = f"This is a decrease of {abs(diff)} entries ({pct:.1f}%) compared to the previous week."
+        else:
+            trend_text = "This matches the previous week exactly."
+
+    forecast = forecast_next_count('weekly', week_start)
+
+    summary = (
+        f"Week of {week_start.strftime('%B %d, %Y')} to {week_end.strftime('%B %d, %Y')}: "
+        f"{total} unique individuals. "
+        f"{students} were students ({(students / total * 100 if total else 0):.1f}%) and "
+        f"{guests} were guests ({(guests / total * 100 if total else 0):.1f}%). "
+    )
+    if top_dept:
+        summary += f"Top department: {top_dept}. "
+    if purposes:
+        summary += interpret_purpose(purposes) + " "
+    if peak_day:
+        summary += f"Peak presence day was {peak_day}. "
+    summary += trend_text + " "
+    summary += f"Forecast for next week: approximately {forecast} entries. "
+    summary += security_suggestions(
+        guests, students, total,
+        week_df['date'].dt.date.value_counts().max() if not week_df.empty else 0,
+        'day'
+    )
+
+    return summary.strip()
+
+def generate_monthly_summary(presence_data, month, year):
+    # Filter for current month/year
+    month_df = presence_data[
+        (presence_data['date'].dt.month == month) &
+        (presence_data['date'].dt.year == year)
+    ].copy()
+
+    # Get previous month range
+    prev_month_end = (date(year, month, 1) - timedelta(days=1))
+    prev_month_start = prev_month_end.replace(day=1)
+    prev_df = presence_data[
+        (presence_data['date'].dt.month == prev_month_start.month) &
+        (presence_data['date'].dt.year == prev_month_start.year)
+    ].copy()
+
+    total = len(month_df)
+    students = int((month_df['role'].str.lower() == 'student').sum()) if 'role' in month_df else 0
+    guests = int((month_df['role'].str.lower() == 'guest').sum()) if 'role' in month_df else 0
+
+    # Top department among students
+    top_dept = None
+    if not month_df[month_df['role'].str.lower() == 'student'].empty:
+        dept_counts = month_df[month_df['role'].str.lower() == 'student']['department'].value_counts()
+        top_dept = dept_counts.idxmax() if not dept_counts.empty else None
+
+    purposes = month_df['purpose'].value_counts().to_dict() if 'purpose' in month_df else {}
+
+    # Week-of-month peak using Sunday-based weeks
+    peak_week = None
+    if not month_df.empty:
+        # Shift dates so Sunday is treated as the first day of the week
+        month_df['week_of_month'] = (
+            ((month_df['date'] - pd.offsets.Week(weekday=6))
+             .dt.day - 1) // 7 + 1
+        )
+        peak_week = int(month_df['week_of_month'].value_counts().idxmax())
+
+    # Inline comparison to previous month
+    prev_total = len(prev_df)
+    if prev_total == 0:
+        trend_text = "No previous data available for comparison."
+    else:
+        diff = total - prev_total
+        pct = (diff / prev_total) * 100
+        if diff > 0:
+            trend_text = f"This is an increase of {abs(diff)} entries ({pct:.1f}%) compared to the previous month."
+        elif diff < 0:
+            trend_text = f"This is a decrease of {abs(diff)} entries ({pct:.1f}%) compared to the previous month."
+        else:
+            trend_text = "This matches the previous month exactly."
+
+    forecast = forecast_next_count('monthly', date(year, month, 1))
+
+    summary = f"{date(year, month, 1).strftime('%B %Y')}: {total} entries. "
+    summary += f"{students} were students ({(students/total*100 if total else 0):.1f}%) and {guests} were guests ({(guests/total*100 if total else 0):.1f}%). "
+    if top_dept:
+        summary += f"Top department: {top_dept}. "
+    if purposes:
+        summary += interpret_purpose(purposes) + " "
+    if peak_week:
+        suffix = {1: '1st', 2: '2nd', 3: '3rd'}.get(peak_week, f"{peak_week}th")
+        summary += f"The {suffix} Sunday-based week of the month had the highest presence, indicating the busiest period. "
+    summary += trend_text + " "
+    summary += f"Forecast for next month: approximately {forecast} entries. "
+    summary += security_suggestions(
+        guests,
+        students,
+        total,
+        month_df['week_of_month'].value_counts().max() if not month_df.empty else 0,
+        'week'
+    )
+
+    return summary.strip()
+
+def update_summary(summary_type, summary_date):
+    """
+    summary_type: 'daily', 'weekly', 'monthly'
+    summary_date: a datetime.date for the period.
+    """
+    if summary_type not in ('daily', 'weekly', 'monthly'):
+        raise ValueError("summary_type must be 'daily', 'weekly', or 'monthly'")
+    if not isinstance(summary_date, date):
+        raise ValueError("summary_date must be a datetime.date")
+
+    normalized_date = normalize_summary_date(summary_date, summary_type)
+
+    # Determine period boundaries
+    if summary_type == 'daily':
+        start = normalized_date
+        end = normalized_date
+    elif summary_type == 'weekly':
+        start = normalized_date
+        end = start + timedelta(days=6)  # Always ends Sunday
+    else:  # monthly
+        start = normalized_date
+        last_day = monthrange(normalized_date.year, normalized_date.month)[1]
+        end = date(normalized_date.year, normalized_date.month, last_day)
+
+    # Fetch logs with 90-day lookback for trend analysis
+    lookback_days = 90
+    logs_qs = PresenceLog.objects.filter(
+        date__date__gte=(start - timedelta(days=lookback_days)),
+        date__date__lte=end
+    )
+    df = pd.DataFrame(list(logs_qs.values('date', 'role', 'department', 'purpose', 'id')))
+
+    student_total = PresenceLog.objects.filter(
+        date__date__range=(start, end), role__iexact='student'
+    ).values('student_id').distinct().count()
+
+    guest_qs = PresenceLog.objects.filter(
+        date__date__range=(start, end), role__iexact='guest'
+    )
+    guest_distinct_snapshots = guest_qs.exclude(snapshot__isnull=True).values('snapshot').distinct().count()
+    guest_total = guest_distinct_snapshots if guest_distinct_snapshots > 0 else guest_qs.count()
+
+    if df.empty:
+        DataAnalysis.objects.update_or_create(
+            summary_type=summary_type,
+            summary_date=normalized_date,
+            defaults={
+                'student_total': student_total,
+                'guest_total': guest_total,
+                'analysis_summary': "No presence data for this period."
+            }
+        )
         return
 
-    summary_text = generate_summary_text(student_count, guest_count, formatted_label)
+    if summary_type == 'daily':
+        analysis_text = generate_daily_summary(df, start)
+    elif summary_type == 'weekly':
+        analysis_text = generate_weekly_summary(df, summary_date)
+    else:
+        analysis_text = generate_monthly_summary(df, normalized_date.month, normalized_date.year)
 
     DataAnalysis.objects.update_or_create(
         summary_type=summary_type,
-        summary_date=date_obj,
+        summary_date=normalized_date,
         defaults={
-            'student_total': student_count,
-            'guest_total': guest_count,
-            'analysis_summary': summary_text,
+            'student_total': student_total,
+            'guest_total': guest_total,
+            'analysis_summary': analysis_text
+        }
+    )
+def update_summary(summary_type, summary_date):
+    """
+    summary_type: 'daily', 'weekly', 'monthly'
+    summary_date: a datetime.date for the period.
+    """
+    if summary_type not in ('daily', 'weekly', 'monthly'):
+        raise ValueError("summary_type must be 'daily', 'weekly', or 'monthly'")
+    if not isinstance(summary_date, date):
+        raise ValueError("summary_date must be a datetime.date")
+
+    normalized_date = normalize_summary_date(summary_date, summary_type)
+
+    # Determine period boundaries
+    if summary_type == 'daily':
+        start = normalized_date
+        end = normalized_date
+    elif summary_type == 'weekly':
+        start = normalized_date
+        end = start + timedelta(days=6)  # Always ends Sunday
+    else:  # monthly
+        start = normalized_date
+        last_day = monthrange(normalized_date.year, normalized_date.month)[1]
+        end = date(normalized_date.year, normalized_date.month, last_day)
+
+    # Fetch logs with 90-day lookback for trend analysis
+    lookback_days = 90
+    logs_qs = PresenceLog.objects.filter(
+        date__date__gte=(start - timedelta(days=lookback_days)),
+        date__date__lte=end
+    )
+    df = pd.DataFrame(list(logs_qs.values('date', 'role', 'department', 'purpose', 'id')))
+
+    student_total = PresenceLog.objects.filter(
+        date__date__range=(start, end), role__iexact='student'
+    ).values('student_id').distinct().count()
+
+    guest_qs = PresenceLog.objects.filter(
+        date__date__range=(start, end), role__iexact='guest'
+    )
+    guest_distinct_snapshots = guest_qs.exclude(snapshot__isnull=True).values('snapshot').distinct().count()
+    guest_total = guest_distinct_snapshots if guest_distinct_snapshots > 0 else guest_qs.count()
+
+    if df.empty:
+        DataAnalysis.objects.update_or_create(
+            summary_type=summary_type,
+            summary_date=normalized_date,
+            defaults={
+                'student_total': student_total,
+                'guest_total': guest_total,
+                'analysis_summary': "No presence data for this period."
+            }
+        )
+        return
+
+    if summary_type == 'daily':
+        analysis_text = generate_daily_summary(df, start)
+    elif summary_type == 'weekly':
+        analysis_text = generate_weekly_summary(df, summary_date)
+    else:
+        analysis_text = generate_monthly_summary(df, normalized_date.month, normalized_date.year)
+
+    DataAnalysis.objects.update_or_create(
+        summary_type=summary_type,
+        summary_date=normalized_date,
+        defaults={
+            'student_total': student_total,
+            'guest_total': guest_total,
+            'analysis_summary': analysis_text
         }
     )
 
 @login_required
 @admin_required
 def data_analysis(request):
+    archive_last_month_analysis()
     today = timezone.localdate()
 
-    # Update all summary types
-    for s_type in ['daily', 'weekly', 'monthly']:
-        update_summary(s_type, today)
+    # Update today's summaries
+    for summary_type in ['daily', 'weekly', 'monthly']:
+        update_summary(summary_type, today)
 
-    # Collect top summary data (latest entries for each type)
+    def get_last_day_of_month(d):
+        last_day = monthrange(d.year, d.month)[1]
+        return d.replace(day=last_day)
+
+    month_start = today.replace(day=1)
+    month_last = get_last_day_of_month(today)
+
+    # Fetch entries
+    daily_entries = DataAnalysis.objects.filter(
+        summary_type='daily',
+        summary_date__range=(month_start, month_last)
+    ).order_by('summary_date')
+
+    weekly_entries = DataAnalysis.objects.filter(
+        summary_type='weekly',
+        summary_date__range=(month_start, month_last)
+    ).order_by('summary_date')
+
+    monthly_entries = DataAnalysis.objects.filter(
+        summary_type='monthly',
+        summary_date=month_start
+    )
+
+    daily_map = {entry.summary_date: entry for entry in daily_entries}
+    weekly_map = {entry.summary_date: entry for entry in weekly_entries}
+    monthly_map = {entry.summary_date: entry for entry in monthly_entries}
+
+    # Generate all dates for this month
+    days_in_month = [month_start + timedelta(days=i) for i in range((month_last - month_start).days + 1)]
+    days_up_to_today = [d for d in days_in_month if d <= today]
+
+    # --- DAILY ---
+    full_daily_list = []
+    for d in days_up_to_today:
+        entry = daily_map.get(d)
+        full_daily_list.append({
+            'summary_date': d,
+            'analysis_summary': entry.analysis_summary if entry else "No summary to display.",
+            'student_total': entry.student_total if entry else 0,
+            'guest_total': entry.guest_total if entry else 0,
+            'summary_type': 'daily',
+            'day_of_week': calendar.day_name[d.weekday()]
+        })
+
+    # --- WEEKLY (store Monday, display Sunday) ---
+    def get_sundays(year, month, up_to_date):
+        sundays = []
+        d = date(year, month, 1)
+        while d.weekday() != 6:  # find first Sunday
+            d += timedelta(days=1)
+        while d.month == month and d <= up_to_date:
+            sundays.append(d)
+            d += timedelta(days=7)
+        return sundays
+
+    week_ends_up_to_today = get_sundays(today.year, today.month, today)
+
+    full_weekly_list = []
+    for sunday in week_ends_up_to_today:
+        monday = sunday - timedelta(days=6)  # stored summary_date
+        entry = weekly_map.get(monday)
+        full_weekly_list.append({
+            'summary_date': sunday,  # display Sunday
+            'analysis_summary': entry.analysis_summary if entry else "No summary to display.",
+            'student_total': entry.student_total if entry else 0,
+            'guest_total': entry.guest_total if entry else 0,
+            'summary_type': 'weekly',
+            'day_of_week': calendar.day_name[sunday.weekday()]
+        })
+
+    # --- MONTHLY ---
+    if month_start in monthly_map:
+        entry = monthly_map[month_start]
+        monthly_summary = {
+            'summary_date': get_last_day_of_month(entry.summary_date),
+            'analysis_summary': entry.analysis_summary,
+            'student_total': entry.student_total,
+            'guest_total': entry.guest_total,
+            'summary_type': 'monthly',
+            'day_of_week': calendar.day_name[get_last_day_of_month(entry.summary_date).weekday()]
+        }
+    else:
+        monthly_summary = {
+            'summary_date': month_last,
+            'analysis_summary': "No summary to display.",
+            'student_total': 0,
+            'guest_total': 0,
+            'summary_type': 'monthly',
+            'day_of_week': calendar.day_name[month_last.weekday()]
+        }
+
+    # Prepare "Today's Presence Summary"
     summary_data = []
     for s_type in ['daily', 'weekly', 'monthly']:
-        entry = DataAnalysis.objects.filter(summary_type=s_type).order_by('-summary_date').first()
+        norm_date = normalize_summary_date(today, s_type)
+        entry = DataAnalysis.objects.filter(summary_type=s_type, summary_date=norm_date).first()
         if entry:
             total = entry.student_total + entry.guest_total
-            summary_data.append((
-                s_type,
-                {
-                    'student': entry.student_total,
-                    'guest': entry.guest_total,
-                    'student_percent': round((entry.student_total / total) * 100 if total > 0 else 0, 2),
-                    'guest_percent': round((entry.guest_total / total) * 100 if total > 0 else 0, 2),
-                }
-            ))
+            summary_data.append({
+                'period': s_type,
+                'student_count': entry.student_total,
+                'guest_count': entry.guest_total,
+                'student_percent': round((entry.student_total / total) * 100 if total else 0, 2),
+                'guest_percent': round((entry.guest_total / total) * 100 if total else 0, 2),
+            })
 
-    # Full table data
-    analysis_data = DataAnalysis.objects.all().order_by('-summary_date')
+    # Combine all summaries for single table
+    combined_summaries = full_daily_list + full_weekly_list
+    combined_summaries.sort(key=lambda x: x['summary_date'], reverse=True)
 
     return render(request, 'users/Admin/data_analysis.html', {
-        'summary_data': summary_data,      # used by top summary table
-        'analysis_data': analysis_data     # used by bottom full table
+        'summary_data': summary_data,
+        'monthly_summary': monthly_summary,
+        'combined_summaries': combined_summaries,
     })
+
+def normalize_summary_date(summary_date, period):
+    """
+    Aligns summary_date to the correct start date for the given period.
+    - daily: same date
+    - weekly: Monday of the week containing summary_date
+    - monthly: first day of the month
+    """
+    if period == "daily":
+        return summary_date
+    elif period == "weekly":
+        # Always align to Monday start
+        return summary_date - timedelta(days=summary_date.weekday())
+    elif period == "monthly":
+        return summary_date.replace(day=1)
+    else:
+        raise ValueError(f"Invalid period: {period}")
+
+@admin_required
+def archived_analysis_view(request):
+    archived_entries = ArchivedDataAnalysis.objects.select_related('reference').order_by('-archived_at')
+
+    return render(request, 'users/Admin/archived_analysis.html', {
+        'archived_entries': archived_entries
+    })
+
 
 @login_required
 @admin_required
@@ -648,7 +1221,11 @@ def presence_logs_month(request):
 
 @admin_required
 def archived_logs(request):
-    return render(request, 'users/Admin/archived_logs.html')
+    archived_logs = ArchivedPresenceLog.objects.select_related('reference').order_by('-archived_at')
+
+    return render(request, 'users/Admin/archived_logs.html', {
+        'archived_logs': archived_logs
+    })
 
 @monitor_or_admin_required
 def get_archived_logs(request):

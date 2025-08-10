@@ -7,14 +7,15 @@
 <div class="container mt-5">
   <h2 class="text-center mb-4">📊 Presence Data Analytics</h2>
 
-  <!-- 🔹 Minimal Daily, Weekly, Monthly Summary (Single Entry Only) -->
+  <!-- 🔹 Today's Presence Summary -->
   <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-primary text-white py-2">
+    <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
       <h5 class="mb-0">Today's Presence Summary</h5>
     </div>
     <div class="card-body p-3">
       <div class="table-responsive">
         <table class="table table-sm table-bordered text-center align-middle mb-0">
+          <caption class="sr-only">Presence summary table for students and guests</caption>
           <thead class="table-light">
             <tr>
               <th>Period</th>
@@ -25,70 +26,73 @@
             </tr>
           </thead>
           <tbody>
-            {% for label, counts in summary_data %}
-              <tr>
-                <td>{{ label|title }}</td>
-                <td>{{ counts.student }}</td>
-                <td>{{ counts.guest }}</td>
-                <td>{{ counts.student_percent }}%</td>
-                <td>{{ counts.guest_percent }}%</td>
-              </tr>
-            {% empty %}
+            {% if summary_data %}
+              {% for item in summary_data %}
+                <tr>
+                  <td>{{ item.period|title }}</td>
+                  <td>{{ item.student_count }}</td>
+                  <td>{{ item.guest_count }}</td>
+                  <td><span class="badge bg-success">{{ item.student_percent }}%</span></td>
+                  <td><span class="badge bg-warning text-dark">{{ item.guest_percent }}%</span></td>
+                </tr>
+              {% endfor %}
+            {% else %}
               <tr>
                 <td colspan="5">No summary data available for today.</td>
               </tr>
-            {% endfor %}
+            {% endif %}
           </tbody>
         </table>
+        <small class="text-muted">Note: These are unique individual counts per role.</small>
       </div>
     </div>
   </div>
 
-  <!-- 🔹 Full Summary Analysis Table -->
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-dark text-white py-2">
-      <h5 class="mb-0">Summary Analysis Table</h5>
-    </div>
-    <div class="card-body p-3">
-      {% if analysis_data %}
+<!-- 🔹 Combined AI-Generated Summaries Table -->
+  <div class="card-body p-3">
+    {% if combined_summaries %}
       <div class="table-responsive">
-        <table class="table table-bordered table-hover table-striped align-middle text-center">
-          <thead class="table-primary">
+        <table class="table table-bordered table-striped table-sm align-middle">
+          <thead class="table-dark">
             <tr>
-              <th>ID</th>
-              <th>Summary</th>
-              <th>Label</th>
-              <th>Date</th>
+              <th scope="col">Date</th>
+              <th scope="col">Day</th>
+              <th scope="col">Type</th>
+              <th scope="col">Summary</th>
             </tr>
           </thead>
           <tbody>
-            {% for item in analysis_data %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td class="text-start">{{ item.analysis_summary }}</td>
-              <td>
-                {% if item.summary_type == 'daily' %}
-                  <span class="badge bg-info text-dark">Day</span>
-                {% elif item.summary_type == 'weekly' %}
-                  <span class="badge bg-success">Week</span>
-                {% elif item.summary_type == 'monthly' %}
-                  <span class="badge bg-warning text-dark">Month</span>
-                {% else %}
-                  <span class="badge bg-secondary">Unknown</span>
-                {% endif %}
-              </td>
-              <td>{{ item.summary_date }}</td>
-            </tr>
+            {% for entry in combined_summaries %}
+              <tr>
+                <td>{{ entry.summary_date|date:"F j, Y" }}</td>
+                <td>{{ entry.summary_date|date:"l" }}</td>
+                <td>
+                  {% if entry.summary_type == 'daily' %}
+                    <span class="badge bg-info text-dark">Daily</span>
+                  {% elif entry.summary_type == 'weekly' %}
+                    <span class="badge bg-success">Weekly</span>
+                  {% elif entry.summary_type == 'monthly' %}
+                    <span class="badge bg-warning text-dark">Monthly</span>
+                  {% endif %}
+                </td>
+                <td style="white-space: pre-line;">{{ entry.analysis_summary }}</td>
+              </tr>
             {% endfor %}
+            <!-- Monthly summary always last -->
+            <tr>
+              <td>{{ monthly_summary.display_date|default:monthly_summary.summary_date|date:"F j, Y" }}</td>
+              <td>{{ monthly_summary.display_date|default:monthly_summary.summary_date|date:"l" }}</td>
+              <td><span class="badge bg-warning text-dark">Monthly</span></td>
+              <td style="white-space: pre-line;">{{ monthly_summary.analysis_summary }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
-      {% else %}
+    {% else %}
       <div class="alert alert-info text-center" role="alert">
-        No data analysis records found.
+        No AI-generated summaries available yet.
       </div>
-      {% endif %}
-    </div>
+    {% endif %}
   </div>
-</div>
 {% endblock %}
+
