@@ -8,41 +8,156 @@
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-3">
-        <i class="bi bi-calendar-event"></i> Presence Logs for {{ month }}</h2>
+        <i class="bi bi-calendar-event"></i> Presence Logs for {{ month }}
+    </h2>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
 
     {% if logs %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Date & Time</th>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Department</th>
-                    <th>Purpose</th>
-                    <th>Edited</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in logs %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ log.date }}</td>
-                    <td>{{ log.student_id }}</td>
-                    <td>{{ log.name }}</td>
-                    <td>{{ log.role }}</td>
-                    <td>{{ log.department }}</td>
-                    <td>{{ log.purpose }}</td>
-                    <td>{{ log.edited|yesno:"✅,❌" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <form id="bulkArchiveForm" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning mb-3" id="bulkArchiveBtn" disabled>
+            Archive Selected
+        </button>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>#</th>
+                        <th>Date & Time</th>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Purpose</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            {% if log.is_previous_month %}
+                                <input type="checkbox" class="archiveCheckbox" name="ids[]" value="{{ log.id }}">
+                            {% endif %}
+                        </td>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ log.logs_timestamp|date:"Y-m-d g:i A" }}</td>
+                        <td>{{ log.student_id }}</td>
+                        <td>{{ log.name }}</td>
+                        <td>{{ log.role }}</td>
+                        <td>{{ log.department }}</td>
+                        <td>{{ log.purpose }}</td>
+                        <td>
+                            {% if log.is_previous_month %}
+                                <button type="button" class="btn btn-sm btn-warning archiveBtn" data-id="{{ log.id }}">
+                                    Archive
+                                </button>
+                            {% else %}
+                                <span class="text-muted">Current Month</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
     {% else %}
         <div class="alert alert-info">No logs found for this month.</div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const archiveButtons = document.querySelectorAll('.archiveBtn');
+    const bulkArchiveForm = document.getElementById('bulkArchiveForm');
+    const bulkArchiveBtn = document.getElementById('bulkArchiveBtn');
+    const checkboxes = document.querySelectorAll('.archiveCheckbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+
+    // Single archive button
+    archiveButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            if (!confirm('Archive this record?')) return;
+            const id = button.dataset.id;
+
+            const res = await fetch(`/archive-log/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Accept': 'application/json',
+                }
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    });
+
+    // Enable/Disable bulk archive button based on checkbox selection
+    function toggleBulkButton() {
+        bulkArchiveBtn.disabled = !Array.from(checkboxes).some(box => box.checked);
+    }
+
+    checkboxes.forEach(box => {
+        box.addEventListener('change', toggleBulkButton);
+    });
+
+    selectAllCheckbox.addEventListener('change', () => {
+        checkboxes.forEach(box => {
+            box.checked = selectAllCheckbox.checked;
+        });
+        toggleBulkButton();
+    });
+
+    // Bulk archive submit
+    bulkArchiveForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!confirm('Archive selected records?')) return;
+
+        const selectedIds = Array.from(checkboxes)
+            .filter(box => box.checked)
+            .map(box => box.value);
+
+        if (!selectedIds.length) {
+            alert('No records selected.');
+            return;
+        }
+
+        const formData = new FormData();
+        selectedIds.forEach(id => formData.append('ids[]', id));
+
+        const res = await fetch('/bulk-archive-logs/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Accept': 'application/json',
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+        alert(data.message);
+        if (data.status === 'success') {
+            location.reload();
+        }
+    });
+
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+});
+</script>
 {% endblock %}
