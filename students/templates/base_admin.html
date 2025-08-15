@@ -152,6 +152,16 @@ body {
         <i class="bi bi-person-lines-fill me-2"></i>Student Records
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
+        <i class="bi bi-calendar-event"></i> Monthly Logs
+      </a>
+    </li>
+     <li class="nav-item">
+      <a class="nav-link text-white" href="{% url 'data_analysis' %}">
+        <i class="bi bi-bar-chart-line"></i> Data Analysis
+      </a>
+    </li>
           <li class="nav-item">
         <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
           <i class="bi bi-calendar-event"></i> Monthly Logs
@@ -190,10 +200,12 @@ body {
             </a>
           </li>
           <li class="nav-item">
-              <a class="nav-link text-white" href="{% url 'archived_students' %}">🧊 Archived Students</a>
+            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active{% endif %}" href="{% url 'archived_students' %}">
+              <i class="bi bi-archive me-2"></i>Archived Students
+            </a>
           </li>
           <li class="nav-item">
-              <a class="nav-link text-white" href="{% url 'archived_analysis' %}">🧊 Archived Analysis</a>
+            <a class="nav-link text-white" href="{% url 'archived_analysis' %}">🧊 Archived Analysis</a>
           </li>
         </ul>
       </div>
