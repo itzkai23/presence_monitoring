@@ -49,7 +49,7 @@ body {
       transform: rotate(0);
       transition: transform 0.2s ease;
     }
-
+/* 
     .custom-dropdown-hidden {
   display: none !important;
     }
@@ -108,7 +108,7 @@ body {
     }
     .badge-status {
       font-size: 0.85rem;
-    }
+    } */
 
   </style>
 </head>
@@ -152,11 +152,16 @@ body {
         <i class="bi bi-person-lines-fill me-2"></i>Student Records
       </a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_logs_month' %}active{% endif %}" href="{% url 'presence_logs_month' %}">
-        <i class="bi bi-calendar-event me-2"></i>Monthly Logs
-      </a>
-    </li>
+          <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
+          <i class="bi bi-calendar-event"></i> Monthly Logs
+        </a>
+      </li>
+       <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'data_analysis' %}">
+          <i class="bi bi-bar-chart-line"></i> Data Analysis
+        </a>
+      </li>
 
     <!-- Archived Section -->
     <li class="nav-item mt-3">
@@ -185,9 +190,10 @@ body {
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active{% endif %}" href="{% url 'archived_students' %}">
-              <i class="bi bi-archive me-2"></i>Archived Students
-            </a>
+              <a class="nav-link text-white" href="{% url 'archived_students' %}">🧊 Archived Students</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link text-white" href="{% url 'archived_analysis' %}">🧊 Archived Analysis</a>
           </li>
         </ul>
       </div>
@@ -196,69 +202,17 @@ body {
   {% endblock %}
 </nav>
 
-  <!-- Sidebar -->
-  <nav id="sidebar" class="bg-dark text-white p-3 vh-100">
-    {% block sidebar %}
-    <h5 class="text-white mb-4">Navigation</h5>
-    <ul class="nav flex-column">
-      <!-- Top-level links -->
-      <li class="nav-item">
-        <a class="nav-link text-white" href="{% url 'presence_table' %}">
-          <i class="bi bi-clock-history me-2"></i>Presence Records
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white" href="{% url 'student_records' %}">
-          <i class="bi bi-person-lines-fill me-2"></i>Student Records
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
-          <i class="bi bi-calendar-event"></i> Monthly Logs
-        </a>
-      </li>
-       <li class="nav-item">
-        <a class="nav-link text-white" href="{% url 'data_analysis' %}">
-          <i class="bi bi-bar-chart-line"></i> Data Analysis
-        </a>
-      </li>
-      
-     <!-- Archived Section -->
-      <li class="nav-item">
-        <a class="nav-link text-white d-flex justify-content-between align-items-center"
-          data-bs-toggle="collapse" href="#archivedCollapse" role="button"
-          aria-expanded="false" aria-controls="archivedCollapse">
-           <i class="bi bi-archive"></i> Archived Records
-          <i class="bi bi-caret-down-fill"></i>
-        </a>
-        <div class="collapse" id="archivedCollapse">
-          <ul class="nav flex-column ps-4 mt-1">
-            <li class="nav-item">
-              <a class="nav-link text-white" href="{% url 'archived_logs' %}"><i class="bi bi-box me-2"></i> Archived Logs</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white" href="{% url 'archived_students' %}">🧊 Archived Students</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white" href="{% url 'archived_analysis' %}">🧊 Archived Analysis</a>
-            </li>
-          </ul>
-        </div>
-      </li>
-    {% endblock %}
-  </nav>
-
   <!-- Page Content -->
   <div class="flex-grow-1 d-flex flex-column">
     <!-- Header -->
-<header class="d-flex align-items-center justify-content-between bg-white border-bottom shadow-sm px-4" style="height: 64px;">
+<!-- <header class="d-flex align-items-center justify-content-between bg-white border-bottom shadow-sm px-4" style="height: 64px;"> -->
   <!-- Left section: Logo + Title -->
-  <div class="d-flex align-items-center gap-2">
+  <!-- <div class="d-flex align-items-center gap-2">
     <h5 class="mb-0 fw-semibold text-dark">Admin Dashboard</h5>
-  </div>
+  </div> -->
 
 <!-- Right section: Custom Profile Dropdown -->
-<div class="position-relative" id="customProfileDropdown">
+<!-- <div class="position-relative" id="customProfileDropdown">
   <button class="btn d-flex align-items-center gap-2 border-0 bg-white text-dark text-decoration-none" id="profileToggleBtn" type="button">
     <i class="bi bi-person-circle text-dark fs-3 me-1"></i>
     <span class="d-none d-md-inline text-dark">
@@ -282,7 +236,7 @@ body {
   </div>
 </div>
 
-</header>
+</header> -->
 
     <header class="d-flex align-items-center justify-content-between bg-light border-bottom p-3">
       <div class="d-flex align-items-center">
@@ -301,35 +255,35 @@ body {
   </div>
 
  <!-- Modal -->
-<div class="modal fade" id="settingsModal" tabindex="-1">
+<!-- <div class="modal fade" id="settingsModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-body p-0">
-        <div class="row g-0">
+        <div class="row g-0"> -->
           
           <!-- Left Profile Card -->
-          <div class="col-md-4 bg-white profile-card">
+          <!-- <div class="col-md-4 bg-white profile-card">
             <img src="https://via.placeholder.com/100" alt="Admin Photo">
             <h5 class="mb-1">John Admin</h5>
             <p class="text-muted">Administrator</p>
             <hr>
             <p><strong>Member Since:</strong> Jan 2023</p>
             <p><strong>Email:</strong> admin@example.com</p>
-          </div>
+          </div> -->
 
           <!-- Right Settings Tabs -->
-          <div class="col-md-8 p-3">
+          <!-- <div class="col-md-8 p-3">
             <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
               <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profileTab">Profile</button></li>
               <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#securityTab">Security</button></li>
               <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#preferencesTab">Preferences</button></li>
               <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#systemTab">System Info</button></li>
-            </ul>
+            </ul> -->
 
-            <div class="tab-content mt-3">
+            <!-- <div class="tab-content mt-3"> -->
               
               <!-- Profile Tab -->
-              <div class="tab-pane fade show active" id="profileTab">
+              <!-- <div class="tab-pane fade show active" id="profileTab">
                 <form>
                   <div class="mb-3">
                     <label class="form-label">Full Name</label>
@@ -341,17 +295,17 @@ body {
                   </div>
                   <button type="button" class="btn btn-primary">Save Changes</button>
                 </form>
-              </div>
+              </div> -->
 
               <!-- Security Tab -->
-              <div class="tab-pane fade" id="securityTab">
+              <!-- <div class="tab-pane fade" id="securityTab">
                 <p><strong>Password:</strong> ******** <button class="btn btn-sm btn-outline-primary">Change</button></p>
                 <p><strong>Two-Factor Authentication:</strong> <span class="badge bg-success badge-status">Enabled</span></p>
                 <p><strong>Last Login:</strong> Aug 10, 2025 - 09:14 AM</p>
-              </div>
+              </div> -->
 
               <!-- Preferences Tab -->
-              <div class="tab-pane fade" id="preferencesTab">
+              <!-- <div class="tab-pane fade" id="preferencesTab">
                 <div class="form-check form-switch mb-2">
                   <input class="form-check-input" type="checkbox" id="darkModeToggle">
                   <label class="form-check-label" for="darkModeToggle">Dark Mode</label>
@@ -364,16 +318,16 @@ body {
                     <option>Spanish</option>
                   </select>
                 </div>
-              </div>
+              </div> -->
 
               <!-- System Info Tab -->
-              <div class="tab-pane fade" id="systemTab">
+              <!-- <div class="tab-pane fade" id="systemTab">
                 <p><strong>Role:</strong> Administrator</p>
                 <p><strong>System Version:</strong> 1.2.0</p>
                 <p><strong>Last Update:</strong> Aug 1, 2025</p>
-              </div>
+              </div> -->
 
-            </div>
+            <!-- </div>
           </div>
 
         </div>
@@ -383,7 +337,7 @@ body {
       </div>
     </div>
   </div>
-</div>
+</div> -->
 
 
 
