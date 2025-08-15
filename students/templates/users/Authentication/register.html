@@ -3,6 +3,158 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #02111c, #0b3c5d);
+      color: #e8eef4;
+    }
+  
+    .form-label {
+      color: #cfd8dc;  /* soft grayish-blue */
+    }
+  
+    .form-control {
+      border: 1px solid #4b5d6b;
+      background-color: #091a26;
+      color: #e8eef4;
+    }
+  
+    .form-control::placeholder {
+      color: #88a9c0;
+    }
+  
+    .form-control:focus {
+      border-color: #00bcd4;
+      background-color: #0f2a3e;
+      color: #ffffff;
+      box-shadow: 0 0 0 0.15rem rgba(0, 188, 212, 0.25);
+    }
+  
+    .btn-success {
+      background-color: #00bcd4;
+      border-color: #00bcd4;
+      color: #ffffff;
+    }
+  
+    .btn-success:hover {
+      background-color: #009daf;
+      border-color: #009daf;
+    }
+  
+    .alert-danger {
+      background-color: #2e1a1a;
+      color: #ffaaaa;
+      border-color: #8b0000;
+    }
+  
+    .shadow {
+      box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.4);
+    }
+  
+    /* Fix for card background */
+    #registration-form {
+      background: linear-gradient(145deg, #0b1f2e, #0f2639);
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
+    }
+  
+    h2 {
+      color: #ffffff;
+    }
+
+    .snake-border {
+  position: relative;
+  z-index: 1;
+}
+
+.snake-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  
+  background:
+    linear-gradient(
+      to right,
+      transparent 0%,
+      #33bbff 50%,
+      transparent 100%
+    ) top left / 200% 2px no-repeat,
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      #33bbff 50%,
+      transparent 100%
+    ) top right / 2px 200% no-repeat,
+    linear-gradient(
+      to left,
+      transparent 0%,
+      #33bbff 50%,
+      transparent 100%
+    ) bottom right / 200% 2px no-repeat,
+    linear-gradient(
+      to top,
+      transparent 0%,
+      #33bbff 50%,
+      transparent 100%
+    ) bottom left / 2px 200% no-repeat;
+
+  animation: snake-border-anim 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes snake-border-anim {
+  0% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      100% 100%,
+      0% 100%;
+  }
+  25% {
+    background-position:
+      100% 0%,
+      100% 100%,
+      0% 100%,
+      0% 0%;
+  }
+  50% {
+    background-position:
+      100% 0%,
+      100% 100%,
+      0% 100%,
+      0% 0%;
+  }
+  75% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      100% 100%,
+      0% 100%;
+  }
+  100% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      100% 100%,
+      0% 100%;
+  }
+}
+
+.glow-white {
+  color: #ffffff;
+  text-shadow:
+    0 0 4px rgba(255, 255, 255, 0.4),
+    0 0 8px rgba(255, 255, 255, 0.3);
+}
+  </style>
+  
+  
+
 <div class="row justify-content-center">
     <div class="col-md-8">
 
@@ -18,8 +170,8 @@
             </div>
         {% endif %}
 
-            <form id="registration-form" method="POST" class="border p-4 rounded bg-light shadow">
-                <h2 class="mb-4 text-center fw-bold text-secondary">Student Registration</h2>
+            <form id="registration-form" method="POST" class="p-4 rounded shadow snake-border">
+                <h2 class="mb-4 text-center fw-bold text-light glow-white">Student Registration</h2>
             {% csrf_token %}
 
             <div class="row mb-3">

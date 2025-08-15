@@ -7,16 +7,14 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-3">
-        <i class="bi bi-calendar-event"></i> Presence Logs for {{ month }}
-    </h2>
-
-    <!-- Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-info">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-uppercase text-primary-emphasis">
+          <i class="bi bi-calendar-event me-2"></i>Presence Logs
+        </h2>
+        <p class="text-muted fs-6">
+          for <span class="fw-semibold">{{ month }}</span>
+        </p>
+      </div>      
 
     {% if logs %}
     <form id="bulkArchiveForm" method="post">
