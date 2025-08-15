@@ -1,4 +1,4 @@
-let currentFilters = { department: '', course: '', year: '' };
+let currentFilters = { department: '', course: '' };
 let currentStudentId = null;
 let videoStream = null;
 
@@ -34,12 +34,11 @@ document.getElementById('toggleSidebar')?.addEventListener('click', () => {
   document.getElementById('mainContent')?.classList.toggle('shifted');
 });
 
-function applyFilters(department = '', course = '', year = '') {
-  currentFilters = { department, course, year };
+function applyFilters(department = '', course = '') {
+  currentFilters = { department, course};
   const params = new URLSearchParams();
   if (department) params.append('department', department);
   if (course) params.append('course', course);
-  if (year) params.append('year', year);
 
   let url = `/filter_students`;
   if ([...params].length > 0) url += `?${params.toString()}`;
@@ -72,9 +71,7 @@ function renderStudentTable(students) {
           <th>Student ID</th>
           <th>Name</th>
           <th>Email</th>
-          <th>Section</th>
           <th>Course</th>
-          <th>Year Level</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -97,9 +94,7 @@ function renderStudentTable(students) {
         <td>${s.student_id}</td>
         <td>${s.first_name} ${s.last_name}</td>
         <td>${s.email}</td>
-        <td>${s.section}</td>
         <td>${s.course}</td>
-        <td>${s.year_level}</td>
         <td>
           <button class="btn btn-sm btn-danger archive-btn" data-id="${s.id}">Delete</button>
         </td>
@@ -254,5 +249,9 @@ function getCSRFToken() {
   return csrf ? csrf.split("=")[1] : "";
 }
 
-
-
+document.addEventListener('DOMContentLoaded', () => {
+  applyFilters(); // Initial load
+  document.querySelectorAll('.toggle-arrow').forEach(el => {
+    el.addEventListener('click', () => toggleNestedList(el));
+  });
+});
