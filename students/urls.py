@@ -48,5 +48,8 @@ urlpatterns = [
     path('update-purpose/<int:log_id>/', views.update_purpose, name='update_purpose'),
     path('archive-student/<int:pk>/', views.archive_student, name='archive_student'),
     path('retrieve-student/<int:pk>/', views.retrieve_student, name='retrieve_student'),
+    path('archive-log/<int:log_id>/', views.archive_log, name='archive_log'),
+    path('bulk-archive-logs/', views.bulk_archive_logs, name='bulk_archive_logs'),
+
 ]
 

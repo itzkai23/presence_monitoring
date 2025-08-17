@@ -1,83 +1,251 @@
 category,phrase
+# ------------------------
+# DAILY PHRASES
+# ------------------------
+intro,On this date, the campus saw notable activity worth reviewing.
+intro,Here’s an overview of the recorded campus presence.
+intro,The following summary outlines the day’s activity trends.
+intro,Campus presence data for the day has been analyzed and summarized.
+intro,Today’s report highlights key movements and attendance patterns.
+intro,Attendance records from the day indicate noticeable trends.
+intro,Here’s a quick breakdown of what happened on campus today.
+intro,The daily monitoring system captured the following activity summary.
+intro,An analysis of today’s presence log reveals interesting insights.
+intro,Let’s take a closer look at the attendance behavior observed today.
 
-# 🎓 High Student Turnout
-high_student_turnout,There was a surge in student activity, indicating strong engagement or academic schedules.
-high_student_turnout,Student turnout exceeded typical levels, suggesting peak academic periods.
-high_student_turnout,A higher number of students were present than usual, which could be tied to exams or events.
-high_student_turnout,Significant student traffic was observed on campus, reflecting increased academic or extracurricular activity.
+traffic,High activity was detected, indicating a busier than usual day.
+traffic,The day showed elevated entry levels compared to the average.
+traffic,Campus traffic was above normal thresholds.
+traffic,Overall movement into the campus was steady and significant.
+traffic,Entry records suggest a higher-than-expected visitor volume.
+traffic,Foot traffic levels indicate heightened campus engagement.
+traffic,Compared to previous days, the campus experienced more entries.
+traffic,The flow of entries today was noticeably stronger.
+traffic,The system detected consistent movement throughout the day.
+traffic,An above-average number of people entered campus premises.
 
-# 💤 Low Student Turnout
-low_student_turnout,Student attendance was notably low, possibly due to holidays or system irregularities.
-low_student_turnout,Fewer students were observed on campus, which may indicate reduced academic schedules.
-low_student_turnout,There was a drop in student activity, potentially due to non-class days or weather disruptions.
-low_student_turnout,Low student turnout suggests either an off-day or underutilization of campus facilities.
+role_breakdown,Student and guest attendance figures were recorded as follows.
+role_breakdown,Here’s the distribution between students and guests for the day.
+role_breakdown,The campus population mix is detailed below.
+role_breakdown,Students made up the majority of today’s recorded entries.
+role_breakdown,Guest visits accounted for a notable portion of entries.
+role_breakdown,The balance between student and guest traffic is as follows.
+role_breakdown,Data shows the ratio of students to guests on campus.
+role_breakdown,Guest participation today was relatively stable.
+role_breakdown,The split between guest and student presence is outlined here.
+role_breakdown,Campus entry logs reveal the following population composition.
 
-# ⚖️ Normal Student Turnout
-normal_student_turnout,Student presence was within typical levels for the observed period.
-normal_student_turnout,No major fluctuation in student turnout was observed, reflecting steady attendance.
-normal_student_turnout,Student activity remained stable and aligned with routine expectations.
+department,The department with the most student entries was {department}.
+department,Most students recorded came from {department}.
+department,The busiest department of the day was {department}.
+department,{department} reported the highest student attendance today.
+department,{department} saw peak activity among all academic units.
+department,The top-performing department for presence was {department}.
+department,Student movement was highest in the {department} area.
+department,{department} maintained a strong presence rate today.
+department,{department} attracted the largest student crowd.
+department,The leading department in attendance figures was {department}.
 
-# 🚶‍♂️ Guest Surge
-guest_surge,Guest presence was unusually high, indicating possible events or external campus activities.
-guest_surge,A considerable number of guests accessed the campus, which may require additional security oversight.
-guest_surge,The influx of guests suggests public interactions or administrative visits.
-guest_surge,There was a spike in guest traffic, possibly tied to public seminars, deliveries, or events.
+purpose_intro,The primary reasons for presence are outlined below.
+purpose_intro,Visitors and students attended mainly for the following purposes.
+purpose_intro,The most common purposes for entry are detailed here.
+purpose_intro,Attendance purposes today covered these main categories.
+purpose_intro,The breakdown of visit intentions is shown below.
+purpose_intro,Students and guests entered for these primary reasons.
+purpose_intro,The day’s activities were driven by the following purposes.
+purpose_intro,Campus attendance motivations are outlined here.
+purpose_intro,Here’s the purpose distribution based on recorded entries.
+purpose_intro,The primary drivers for campus presence today were as follows.
 
-# 🧍 Normal Guest Presence
-normal_guest,Guest entry levels remained consistent with usual patterns.
-normal_guest,Guest traffic showed no significant anomalies.
-normal_guest,The number of guests observed was within expected operational norms.
-normal_guest,No unusual guest activity detected during this period.
+peak_time,The busiest hour of the day was around {hour}:00.
+peak_time,Campus activity peaked at approximately {hour}:00.
+peak_time,The high point in activity occurred around {hour}:00.
+peak_time,The maximum entry rate happened near {hour}:00.
+peak_time,Most entries were recorded in the hour starting {hour}:00.
+peak_time,The system flagged {hour}:00 as the most active time.
+peak_time,The rush hour for the day was close to {hour}:00.
+peak_time,Campus gates were busiest around {hour}:00.
+peak_time,Most presence logs were generated at about {hour}:00.
+peak_time,Entry spikes occurred at roughly {hour}:00.
 
-# 🧠 General Summary Closing
+trend,Compared to the previous period, activity showed the following change.
+trend,The trend relative to the day before is as follows.
+trend,Presence levels shifted as detailed below.
+trend,Activity increased compared to the prior day.
+trend,The system recorded a dip compared to yesterday.
+trend,Day-to-day variation shows a steady pattern.
+trend,Compared to earlier records, today’s activity had a noticeable shift.
+trend,Presence logs suggest a change in attendance habits.
+trend,Daily movement trends showed mild fluctuations.
+trend,The attendance trajectory followed the pattern below.
+
+forecast,Projections suggest the next period will see around {forecast} entries.
+forecast,Forecast models estimate about {forecast} entries for the upcoming period.
+forecast,Expected activity for tomorrow is approximately {forecast} entries.
+forecast,The next day is likely to record about {forecast} people.
+forecast,Projections for the following period point to {forecast} entries.
+forecast,The coming day is expected to approach {forecast} total entries.
+forecast,Estimates predict {forecast} people on campus next period.
+forecast,Data models indicate roughly {forecast} expected entries.
+forecast,Forecast suggests {forecast} visits for the next cycle.
+forecast,Predicted attendance for tomorrow is {forecast}.
+
+security,Security monitoring remains a priority for all activity levels.
+security,Security protocols should remain consistent given the day’s activity.
+security,Ensure regular security checks regardless of attendance patterns.
+security,The day passed without major security concerns.
+security,Campus security teams stayed alert throughout the day.
+security,No significant incidents were reported during monitoring.
+security,Surveillance remained active during peak and low times.
+security,Security coverage was continuous during the period.
+security,Standard security checks were maintained across campus.
+security,The security framework operated normally without disruption.
+
 general_summary,Continued monitoring is advised to maintain safety and operational efficiency.
 general_summary,No critical alerts were raised, but regular assessments are recommended.
 general_summary,Overall, the data suggests operational normalcy with expected behavior patterns.
 general_summary,The system functioned as intended during this period.
 general_summary,Further data over time will help detect deeper behavioral trends.
+general_summary,Operations today aligned with standard campus activity.
+general_summary,Presence data showed no anomalies requiring intervention.
+general_summary,The report closes with stable operational status.
+general_summary,All monitoring systems worked as expected during this time frame.
+general_summary,The period concluded with routine and manageable activity.
 
-# 🏛️ Top Department
-top_department,Most students detected were from the **{department}**, suggesting heightened activity in this unit.
-top_department,The **{department}** recorded the highest number of student logs during this period.
-top_department,A concentration of student activity was observed in the **{department}**.
-top_department,The **{department}** had the most entries, which could indicate intensive academic operations or events.
+# ------------------------
+# WEEKLY PHRASES
+# ------------------------
+intro_week,This week’s report captures notable campus activity and patterns.
+intro_week,An overview of campus presence for the week is provided below.
+intro_week,The following summary outlines this week’s key attendance trends.
+intro_week,Weekly attendance records highlight several notable changes.
+intro_week,This week’s monitoring shows meaningful shifts in campus presence.
+intro_week,Campus activity patterns over the week have been analyzed.
+intro_week,Here’s a breakdown of how the campus was used this week.
+intro_week,Weekly logs reveal attendance dynamics worth noting.
+intro_week,The week’s presence report is summarized as follows.
+intro_week,Analysis of weekly activity indicates significant engagement.
 
-# 🧑‍🎓 Top Course
-top_course,Students enrolled in **{course}** had the highest recorded presence.
-top_course,The course **{course}** dominated student presence logs for this period.
-top_course,Majority of the student entries belonged to the **{course}** program.
-top_course,**{course}** students appeared more frequently, possibly due to clustered schedules or assessments.
+role_breakdown_week,The ratio of students to guests for the week is as follows.
+role_breakdown_week,Here’s how student and guest attendance balanced this week.
+role_breakdown_week,This week’s presence logs show the following population split.
+role_breakdown_week,Student entries led weekly attendance figures.
+role_breakdown_week,Guests formed a steady share of weekly attendance.
+role_breakdown_week,The balance between guests and students for the week is detailed here.
+role_breakdown_week,Weekly attendance composition is outlined below.
+role_breakdown_week,Guest traffic maintained consistent levels throughout the week.
+role_breakdown_week,The weekly student-to-guest ratio was recorded as follows.
+role_breakdown_week,Campus logs show the weekly mix between students and guests.
 
-# 🧑‍🏫 Top Purpose
-top_purpose,Students frequently logged presence for **{purpose}** during this period.
-top_purpose,The purpose **{purpose}** was the most common reason for campus entry.
-top_purpose,Most visits were associated with **{purpose}** activities.
-top_purpose,**{purpose}** emerged as the leading reason for student presence.
-top_purpose,A significant number of entries were for **{purpose}**, indicating peak academic or event activity.
-top_purpose,Campus logs show heightened presence tied to **{purpose}**.
-top_purpose,**{purpose}** remained the primary intent for student visits across this period.
+department_week,The department with the most student visits this week was {department}.
+department_week,{department} led weekly student attendance numbers.
+department_week,The busiest department during the week was {department}.
+department_week,{department} maintained strong presence rates across the week.
+department_week,{department} saw the highest weekly student engagement.
+department_week,Weekly figures show {department} as the top department.
+department_week,Student activity was strongest in {department} during the week.
+department_week,{department} continued to attract the largest student crowds.
+department_week,{department} topped weekly attendance charts.
+department_week,The leading department for the week was {department}.
 
-top_student_purpose,Most students entered the campus for {purpose}.
-top_student_purpose,Student presence was largely driven by {purpose} activities.
-top_student_purpose,{purpose} was the most common reason among students.
-top_student_purpose,A surge in student presence was observed due to {purpose}.
-top_guest_purpose,Most guests visited for {purpose}.
-top_guest_purpose,Guest entries were primarily for {purpose}.
-top_guest_purpose,{purpose} was the most frequent reason for guest visits.
-top_guest_purpose,Guest presence was mainly related to {purpose} purposes.
+trend_week,Compared to last week, attendance shifted as follows.
+trend_week,Weekly activity levels changed relative to the prior week.
+trend_week,The difference in presence compared to last week is detailed below.
+trend_week,Attendance grew compared to the week before.
+trend_week,The system recorded a decline from last week’s numbers.
+trend_week,Week-to-week variation remained stable.
+trend_week,Compared to earlier weekly data, activity shifted notably.
+trend_week,Weekly logs suggest changing attendance habits.
+trend_week,Campus presence trends shifted moderately this week.
+trend_week,The attendance pattern followed the trajectory below.
 
-# 📅 Peak Day
-peak_day,**{day}** had the highest number of individuals entering the campus.
-peak_day,The busiest day of the week was **{day}**, indicating possible schedule density or events.
-peak_day,Campus activity peaked on **{day}**, which could be due to faculty schedules or major events.
-peak_day,**{day}** was the most active in terms of student and guest presence.
+forecast_week,Projections suggest next week will see around {forecast} entries.
+forecast_week,Forecast models estimate about {forecast} entries for the coming week.
+forecast_week,Expected activity for next week is approximately {forecast} entries.
+forecast_week,The next week is likely to record about {forecast} people.
+forecast_week,Projections for the week ahead point to {forecast} entries.
+forecast_week,The coming week is expected to approach {forecast} total entries.
+forecast_week,Estimates predict {forecast} people on campus next week.
+forecast_week,Data models indicate roughly {forecast} expected entries.
+forecast_week,Forecast suggests {forecast} visits for the next week.
+forecast_week,Predicted attendance for next week is {forecast}.
 
-# 🔐 Security Recommendation - High Guest Activity
-security_guest_surge,Heightened guest activity suggests the need for tighter visitor screening and check-in procedures.
-security_guest_surge,Due to the surge in guest presence, it's recommended to review external access points and increase guard visibility.
-security_guest_surge,Elevated guest entry may warrant additional logging and camera coverage in entry zones.
+# ------------------------
+# MONTHLY PHRASES
+# ------------------------
+intro_month,For the month of {month} {year}, campus activity showed the following.
+intro_month,Monthly presence data for {month} {year} is summarized below.
+intro_month,The following outlines key attendance figures for {month} {year}.
+intro_month,An overview of {month} {year} campus activity is provided here.
+intro_month,Attendance logs for {month} {year} indicate notable engagement.
+intro_month,This report covers the main presence trends for {month} {year}.
+intro_month,Campus activity during {month} {year} showed several patterns.
+intro_month,{month} {year} attendance patterns are detailed below.
+intro_month,Analysis of {month} {year} activity is summarized here.
+intro_month,The month of {month} {year} saw the following attendance highlights.
 
-# 🛡️ Security Recommendation - High Student Traffic
-security_student_surge,Consider managing congestion in hallways or common areas due to high student foot traffic.
-security_student_surge,Increased student turnout may require hallway monitors or adjusted break schedules.
-security_student_surge,Surveillance in academic blocks may help manage crowd density during peak student hours.
+role_breakdown_month,The student-to-guest ratio for the month was as follows.
+role_breakdown_month,Here’s the monthly breakdown between students and guests.
+role_breakdown_month,Monthly attendance logs show the following composition.
+role_breakdown_month,Students formed the majority of monthly attendance.
+role_breakdown_month,Guests accounted for a steady share of entries this month.
+role_breakdown_month,The monthly mix of students and guests is detailed below.
+role_breakdown_month,Monthly logs indicate a stable student-to-guest ratio.
+role_breakdown_month,Guest attendance levels remained consistent this month.
+role_breakdown_month,Students outnumbered guests for the month.
+role_breakdown_month,The proportion of guests to students is shown here.
+
+department_month,The department with the most student entries this month was {department}.
+department_month,{department} had the highest student presence this month.
+department_month,Monthly attendance was led by {department}.
+department_month,{department} maintained top attendance figures for the month.
+department_month,{department} was the busiest department in {month}.
+department_month,The leading department for the month was {department}.
+department_month,Student presence was strongest in {department} this month.
+department_month,{department} consistently drew the largest crowds this month.
+department_month,{department} topped the monthly student attendance chart.
+department_month,{department} recorded peak presence this month.
+
+trend_month,Compared to last month, attendance changed as follows.
+trend_month,Monthly presence levels varied relative to the previous month.
+trend_month,Attendance increased compared to the month before.
+trend_month,This month recorded fewer entries than last month.
+trend_month,The difference from last month’s attendance is detailed below.
+trend_month,Month-to-month variation remained stable overall.
+trend_month,Compared to earlier months, {month} showed noticeable shifts.
+trend_month,Monthly logs suggest evolving attendance habits.
+trend_month,Campus presence patterns shifted moderately this month.
+trend_month,The attendance trajectory for the month is shown here.
+
+forecast_month,Projections suggest next month will see around {forecast} entries.
+forecast_month,Forecast models estimate about {forecast} entries for the coming month.
+forecast_month,Expected activity for next month is approximately {forecast} entries.
+forecast_month,The next month is likely to record about {forecast} people.
+forecast_month,Projections for the month ahead point to {forecast} entries.
+forecast_month,The coming month is expected to approach {forecast} total entries.
+forecast_month,Estimates predict {forecast} people on campus next month.
+forecast_month,Data models indicate roughly {forecast} expected entries.
+forecast_month,Forecast suggests {forecast} visits for the next month.
+forecast_month,Predicted attendance for next month is {forecast}.
+
+interpret_purpose,The most frequent reason for today’s presence is {purpose}, showing a strong focus on this activity.
+interpret_purpose,Today’s data indicates {purpose} as the leading purpose among attendees.
+interpret_purpose,A majority of today’s logs were for {purpose}, making it the standout activity.
+interpret_purpose,Most visitors today were present for {purpose}, which dominated the records.
+interpret_purpose,Today’s crowd primarily gathered for {purpose}.
+interpret_purpose,The day’s top reason for presence is {purpose}, significantly ahead of others.
+interpret_purpose,{purpose} emerges as the most common purpose, drawing the largest group.
+interpret_purpose,Attendance today was largely driven by {purpose}.
+interpret_purpose,The leading motivation for presence today was {purpose}.
+interpret_purpose,Data shows {purpose} as the dominant reason for being on site.
+
+security_suggestions,Consider increasing security personnel during peak hours to manage the flow efficiently.
+security_suggestions,Implement additional access control measures to enhance safety during high-traffic times.
+security_suggestions,Ensure surveillance systems are actively monitored when visitor volume is at its highest.
+security_suggestions,Deploy crowd control strategies to prevent congestion in busy areas.
+security_suggestions,Review entry and exit points to improve safety during peak presence.
+security_suggestions,Prepare backup security staff for days with expected heavy attendance.
+security_suggestions,Increase ID verification checks to maintain order during large gatherings.
+security_suggestions,Use visitor flow analytics to adjust staffing during fluctuating traffic.
+security_suggestions,Maintain visible security patrols to deter potential incidents.
+security_suggestions,Schedule regular safety drills for staff to handle crowd surges effectively.

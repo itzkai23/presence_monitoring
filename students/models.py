@@ -5,7 +5,6 @@ from django.utils import timezone
 # ----------------------------
 # ✅ Student Model 
 # ----------------------------
-
 class Student(models.Model):
     DEPARTMENT_CHOICES = [
         ('CAS', 'College of Arts and Science (CAS)'),
@@ -36,7 +35,6 @@ class Student(models.Model):
 # ----------------------------
 # ✅ Archived Student Model (with FK reference)
 # ----------------------------
-
 class ArchivedStudent(models.Model):
     reference = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
     archived_at = models.DateTimeField(default=timezone.now)
@@ -47,35 +45,38 @@ class ArchivedStudent(models.Model):
 # ----------------------------
 # ✅ PresenceLog: Current Month Only
 # ----------------------------
-
 class PresenceLog(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
-    date = models.DateTimeField(auto_now_add=True)
+    logs_timestamp = models.DateTimeField(default=timezone.now)  # exact datetime of log
     role = models.CharField(max_length=20, default='Student')
-    department = models.CharField(max_length=100)
+    department = models.CharField(max_length=100, blank=True, null=True)
     purpose = models.CharField(max_length=50, default='class')
-    edited = models.BooleanField(default=False)
     snapshot = models.ImageField(upload_to='guest_snapshots/', null=True, blank=True)
 
     def __str__(self):
         if self.student:
-            return f"{self.student.student_id} - {self.student.first_name} - {self.date.strftime('%Y-%m-%d %H:%M:%S')}"
-        return f"Guest - {self.date.strftime('%Y-%m-%d %H:%M:%S')}"
+            return f"{self.student.student_id} - {self.student.first_name} - {self.logs_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"Guest - {self.logs_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
 
-# ----------------------------
-# ✅ Archived Presence Log (with FK reference)
-# ----------------------------
 
 class ArchivedPresenceLog(models.Model):
-    reference = models.ForeignKey(PresenceLog, on_delete=models.SET_NULL, null=True, blank=True)
+    student_id = models.CharField(max_length=20, blank=True, null=True)
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
+    logs_timestamp = models.DateTimeField(default=timezone.now)  # preserve exact log time
+    role = models.CharField(max_length=50, default='Student')
+    department = models.CharField(max_length=100, blank=True, null=True)
+    purpose = models.CharField(max_length=255, blank=True, null=True, default='class')
     archived_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"Archived PresenceLog ID {self.reference.id if self.reference else 'Unknown'}"
+        if self.student_id:
+            return f"{self.student_id} - {self.first_name} {self.last_name} ({self.logs_timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
+        return f"Guest ({self.logs_timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
     
 # ----------------------------
 # ✅ Daily, Weekly, Monthly Summaries
-
+# ----------------------------
 class DataAnalysis(models.Model):
     SUMMARY_TYPE_CHOICES = [
         ('daily', 'Daily'),

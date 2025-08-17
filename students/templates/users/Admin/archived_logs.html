@@ -19,6 +19,7 @@
 
   <input type="search" id="searchArchive" class="form-control mb-3" placeholder="Search archived records..." />
 
+  {% if archived_logs %}
   <div class="table-responsive">
     <table class="table table-bordered table-hover align-middle">
       <thead class="table-dark text-center">
@@ -38,35 +39,34 @@
         <tr class="text-center">
           <td>{{ forloop.counter }}</td>
           <td>{{ log.archived_at|date:"Y-m-d H:i" }}</td>
-          <td>{{ log.reference.date|date:"Y-m-d H:i" }}</td>
-          <td>{{ log.reference.student.student_id|default:"Guest" }}</td>
+          <td>{{ log.logs_timestamp|date:"Y-m-d H:i" }}</td>
+          <td>{{ log.student_id|default:"Guest" }}</td>
           <td>
-            {% if log.reference.student %}
-              {{ log.reference.student.first_name }} {{ log.reference.student.last_name }}
+            {% if log.first_name %}
+              {{ log.first_name }} {{ log.last_name }}
             {% else %}
               Guest
             {% endif %}
           </td>
-          <td>{{ log.reference.role }}</td>
-          <td>{{ log.reference.department }}</td>
-          <td>{{ log.reference.purpose }}</td>
+          <td>{{ log.role }}</td>
+          <td>{{ log.department }}</td>
+          <td>{{ log.purpose }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-
-    {% if not archived_logs %}
-      <div class="alert alert-info text-center" role="alert">
-        No archived presence records available.
-      </div>
-    {% endif %}
   </div>
+  {% else %}
+    <div class="alert alert-info text-center" role="alert">
+      No archived presence records available.
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Optional: client-side search
+  // Client-side search
   document.getElementById('searchArchive').addEventListener('keyup', function () {
     const keyword = this.value.toLowerCase();
     document.querySelectorAll('#archiveTableBody tr').forEach(row => {
