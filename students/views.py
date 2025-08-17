@@ -199,8 +199,6 @@ def verify_otp(request):
                     email=registration_data['email'],
                     course=registration_data['course'],
                     department=registration_data['department'],
-                    section=registration_data['section'],
-                    year_level=registration_data['year_level'],
                     password=make_password(registration_data['password'])
                 )
                 new_student.save()
@@ -907,13 +905,14 @@ def presence_table(request):
     # Fallback for any other case
     return redirect('login')
 
+from django.db.models import Q
+
 @admin_required
 @login_required
 def admin_page(request):
-    students = Student.objects.filter(is_archived=False)  # 🟢 Show only active
+    students = Student.objects.filter(is_archived=False).order_by('last_name', 'first_name')
     return render(request, 'users/Admin/admin_page.html', {
         'students': students,
-        'year_levels': settings.YEAR_LEVELS,
         'department_course_map': settings.DEPARTMENT_COURSE_MAP
     })
 
@@ -926,31 +925,23 @@ def presence_record(request):
 def filter_students(request):
     department = request.GET.get('department', '')
     course = request.GET.get('course', '')
-    year = request.GET.get('year', '')
 
-    students = Student.objects.filter(is_archived=False)  # 👈 exclude archived by default
-
+    filters = Q(is_archived=False)
     if department:
-        students = students.filter(department=department)
+        filters &= Q(department=department)
     if course:
-        students = students.filter(course=course)
-    if year:
-        students = students.filter(year_level=year)
+        filters &= Q(course=course)
 
-    data = []
-    for student in students:
-        data.append({
-            'id': student.id,
-            'student_id': student.student_id,
-            'first_name': student.first_name,
-            'last_name': student.last_name,
-            'email': student.email,
-            'section': student.section,
-            'course': student.course,
-            'year_level': student.year_level,
-            'photo_url': student.photo.url if student.photo else '',
-            'is_archived': student.is_archived,  # optional but useful
-        })
+    students = Student.objects.filter(filters).order_by('last_name', 'first_name')
+
+    data = list(students.values(
+        'id', 'student_id', 'first_name', 'last_name', 'email',
+        'course', 'department', 'is_archived'
+    ))
+
+    # Add photo URL manually since `.values()` can't do conditional logic
+    for student, obj in zip(students, data):
+        obj['photo_url'] = student.photo.url if student.photo else ''
 
     return JsonResponse(data, safe=False)
 
@@ -987,6 +978,27 @@ def upload_student_photo(request, id):
     })
 
 #API Endpoints
+def check_log_today(request):
+    student_id = request.GET.get("student_id")
+    date_str = request.GET.get("date")  # Expecting YYYY-MM-DD
+
+    if not student_id or not date_str:
+        return JsonResponse({"error": "Missing parameters"}, status=400)
+
+    try:
+        date_obj = parse_date(date_str)
+        if not date_obj:
+            return JsonResponse({"error": "Invalid date format"}, status=400)
+
+        logs = PresenceLog.objects.filter(
+            student_id=student_id,
+            timestamp__date=date_obj
+        )
+
+        return JsonResponse({"count": logs.count()})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
 @monitor_or_admin_required
 def get_presence_logs(request):
     today = now().date()
@@ -1138,7 +1150,6 @@ def delete_guest_log(request, log_id):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
-
 @csrf_exempt
 @require_POST
 def update_purpose(request, log_id):
@@ -1221,11 +1232,7 @@ def presence_logs_month(request):
 
 @admin_required
 def archived_logs(request):
-    archived_logs = ArchivedPresenceLog.objects.select_related('reference').order_by('-archived_at')
-
-    return render(request, 'users/Admin/archived_logs.html', {
-        'archived_logs': archived_logs
-    })
+    return render(request, 'users/Admin/archived_logs.html')
 
 @monitor_or_admin_required
 def get_archived_logs(request):
@@ -1267,7 +1274,6 @@ def get_archived_logs(request):
             })
 
     return JsonResponse(data, safe=False)
-
 @admin_required
 def archived_students(request):
     archived_students = Student.objects.filter(is_archived=True)

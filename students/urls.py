@@ -40,7 +40,8 @@ urlpatterns = [
     # ✅ NEW: Presence log API for frontend
     path('get-presence-logs/', views.get_presence_logs, name='get_presence_logs'),
     path('api/log_presence/', views.log_presence_api, name='log_presence_api'),
-    path('api/student_info/<int:pk>/', views.get_student_info, name='get_student_info'),    
+    path('api/student_info/<int:pk>/', views.get_student_info, name='get_student_info'),  
+    path("check_log_today/", views.check_log_today, name="check_log_today"),  
 
     #action
     path('delete-guest-log/<int:log_id>/', views.delete_guest_log, name='delete_guest_log'),
