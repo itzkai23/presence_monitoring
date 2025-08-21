@@ -31,7 +31,7 @@ function renderPresenceTable(logs) {
   );
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No presence records found.</td></tr>`;
+    'tbody.innerHTML = <tr><td colspan="8" class="text-center text-muted">No presence records found.</td></tr>';
     return;
   }
 
@@ -67,7 +67,7 @@ function renderPresenceTable(logs) {
       : '—';
 
     const actionCell = log.role === "Guest"
-      ? `<button class="btn btn-sm btn-danger delete-log-btn" data-log-id="${log.id}">Delete</button>`
+      ? '<button class="btn btn-sm btn-danger delete-log-btn" data-log-id="${log.id}">Delete</button>'
       : '';
 
     const rowHTML = `
@@ -95,7 +95,7 @@ function bindPurposeEditEvents() {
       const logId = e.target.getAttribute('data-log-id');
       const newPurpose = e.target.value;
 
-      const response = await fetch(`/update-purpose/${logId}/`, {
+      const response = await fetch('/update-purpose/${logId}/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ purpose: newPurpose })
@@ -113,7 +113,7 @@ function bindPurposeEditEvents() {
       const newPurpose = e.target.value.trim();
       if (!newPurpose) return;
 
-      const response = await fetch(`/update-purpose/${logId}/`, {
+      const response = await fetch('/update-purpose/${logId}/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ purpose: newPurpose })
@@ -133,7 +133,7 @@ function bindDeleteButtons() {
       const confirmed = confirm("Are you sure you want to delete this guest log?");
       if (!confirmed) return;
 
-      const response = await fetch(`/delete-guest-log/${logId}/`, {
+      const response = await fetch('/delete-guest-log/${logId}/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -153,5 +153,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPresenceTable(logs);
   });
 });
-
-console.log("admin_page.js loaded");

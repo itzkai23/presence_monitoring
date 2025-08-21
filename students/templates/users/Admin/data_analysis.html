@@ -5,14 +5,27 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2 class="text-center mb-4">📊 Presence Data Analytics</h2>
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-uppercase text-primary-emphasis">
+      <i class="bi bi-bar-chart-line me-2"></i>Presence Data Analysis
+    </h2>
+  </div>
+
+  <!-- 🔎 Search Bar with Clear (X) Button -->
+  <div class="input-group mb-3 position-relative">
+    <input type="text" id="searchInput" class="form-control rounded pe-5" placeholder="Search summaries by date, type, or text...">
+    <button class="btn btn-outline-secondary position-absolute end-0 top-0 bottom-0" 
+            id="clearSearch" type="button" style="border: none; background: transparent; display: none;">
+      <i class="bi bi-x-circle-fill text-muted"></i>
+    </button>
+  </div>
 
   <!-- 🔹 AI-Generated Summaries Table -->
   <div class="card mb-4 shadow-sm">
     <div class="card-body p-3">
       {% if combined_summaries %}
         <div class="table-responsive">
-          <table class="table table-bordered table-striped table-sm align-middle">
+          <table id="summaryTable" class="table table-bordered table-striped table-sm align-middle">
             <thead class="table-dark">
               <tr>
                 <th scope="col">Date</th>
@@ -39,7 +52,6 @@
                 </tr>
               {% endfor %}
 
-              <!-- Monthly summary at the bottom if applicable -->
               {% if monthly_summary %}
                 <tr>
                   <td>{{ monthly_summary.summary_date|date:"F j, Y" }}</td>
@@ -59,4 +71,32 @@
     </div>
   </div>
 </div>
+
+<!-- 🔹 Client-side Search Script with Clear Button -->
+<script>
+  const searchInput = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("clearSearch");
+
+  function filterTable() {
+    let input = searchInput.value.toLowerCase();
+    let rows = document.querySelectorAll("#summaryTable tbody tr");
+
+    rows.forEach(row => {
+      let text = row.innerText.toLowerCase();
+      row.style.display = text.includes(input) ? "" : "none";
+    });
+
+    // Show/hide the clear button
+    clearBtn.style.display = input ? "block" : "none";
+  }
+
+  searchInput.addEventListener("keyup", filterTable);
+
+  clearBtn.addEventListener("click", function() {
+    searchInput.value = "";
+    filterTable();
+    searchInput.focus();
+  });
+</script>
+
 {% endblock %}

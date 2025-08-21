@@ -7,258 +7,335 @@
   <title>{% block title %}Admin Dashboard{% endblock %}</title>
 
   <!-- Bootstrap CSS & Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    #sidebar {
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
-  transition: none; /* remove if not using sidebar toggling */
-}
 
+  <style>
+    /* Sidebar */
+    #sidebar {
+      width: 250px;
+      min-width: 250px;
+      max-width: 250px;
+      transition: width 0.3s ease;
+    }
     #sidebar.hidden {
       width: 0 !important;
       padding: 0 !important;
       overflow: hidden;
-      transition: width 0.3s ease;
     }
 
+    /* Collapses */
     .collapse {
-  transition: none !important;
-}
+      transition: height 0.3s ease !important;
+    }
 
-html {
-  height: 100%;
-  margin: 0;
-  scrollbar-gutter: stable; /* ✅ the magic fix */
-}
+    html, body {
+      height: 100%;
+      margin: 0;
+      scrollbar-gutter: stable;
+    }
 
-body {
-  height: 100%;
-  margin: 0;
-}
+    /* Active Sidebar Link */
+    .nav-link.active {
+      background-color: #1f2937 !important;
+      color: #ffc107 !important;
+      font-weight: 600;
+      border-left: 4px solid #ffc107;
+      padding-left: 0.85rem !important;
+    }
 
-    
-    a[aria-expanded="true"] i {
+    /* Hover effect */
+    .nav-link:hover {
+      background-color: #374151 !important;
+      color: #f8f9fa !important;
+    }
+
+    /* Icon color when active */
+    .nav-link.active i {
+      color: #ffc107 !important;
+    }
+
+    /* Smooth transitions for nav items */
+    .nav-link, .nav-link i {
+      transition: all 0.3s ease-in-out;
+    }
+
+    /* Dropdown caret rotation */
+    a[aria-expanded="true"] i.bi-caret-down-fill {
       transform: rotate(180deg);
-      transition: transform 0.2s ease;
+      transition: transform 0.3s ease;
     }
-    a[aria-expanded="false"] i {
+    a[aria-expanded="false"] i.bi-caret-down-fill {
       transform: rotate(0);
-      transition: transform 0.2s ease;
+      transition: transform 0.3s ease;
     }
-/* 
-    .custom-dropdown-hidden {
-  display: none !important;
-    }
-
-     /* header is 64px tall */
-    /* main {
-  min-height: calc(100vh - 64px);
-} */
-
- /* Active sidebar link */
- .nav-link.active {
-    background-color: #1f2937 !important;  /* Dark gray-blue, blends well */
-    color: #ffc107 !important;             /* Bright yellow text/icon */
-    font-weight: 600;
-    border-left: 4px solid #ffc107;
-    padding-left: 0.85rem !important;
-  }
-
-  /* Hover effect for all nav links */
-  .nav-link:hover {
-    background-color: #374151 !important;  /* Slightly lighter than sidebar */
-    color: #f8f9fa !important;
-  }
-
-  /* Icon color in active link */
-  .nav-link.active i {
-    color: #ffc107 !important;
-  }
-
-  /* Smooth transitions */
-  .nav-link, .nav-link i {
-    transition: all 0.3s ease-in-out;
-  }
-
-  #settingsModal .form-control[disabled] {
-  background-color: #f8f9fa;
-  color: #495057;
-  cursor: not-allowed;
-}
-
-#settingsModal img {
-  object-fit: cover;
-}
-
-.profile-card {
-      text-align: center;
-      padding: 20px;
-      border-right: 1px solid #ddd;
-    }
-    .profile-card img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 10px;
-    }
-    .badge-status {
-      font-size: 0.85rem;
-    } */
-
   </style>
 </head>
 <body class="d-flex">
 
   <!-- Sidebar -->
- <!-- Sidebar -->
-<nav id="sidebar" class="bg-dark text-white p-3 vh-100">
-  {% block sidebar %}
+  <nav id="sidebar" class="bg-dark text-white p-3 vh-100">
+    {% block sidebar %}
 
-  <!-- Branding / Logo -->
-  <div class="text-center mb-4">
-    <div class="position-relative d-inline-block">
-      <i class="bi bi-person-circle text-light fs-1"></i>
-      <i class="bi bi-shield-lock-fill text-warning position-absolute bottom-0 end-0" style="font-size: 0.8rem;"></i>
-    </div>
-    
-    <h5 class="fw-bold mb-0">Student Tracker Admin</h5>
-    <small class="text-muted">Control Panel</small>
-  </div>
-
-  <!-- Info Text -->
-  <div class="mb-4 small text-white-50">
-    The navigation are used to manage presence and student records, monthly logs, and archived records.
-  </div>
-
-  <!-- Sidebar Menu -->
-  <ul class="nav flex-column">
-
-    <!-- Management Section -->
-    <li class="nav-item mb-2">
-      <div class="text-uppercase fw-bold small text-white-50 ps-2">Management</div>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_table' %}active{% endif %}" href="{% url 'presence_table' %}">
-        <i class="bi bi-clock-history me-2"></i>Presence Records
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white {% if request.resolver_match.url_name == 'student_records' %}active{% endif %}" href="{% url 'student_records' %}">
-        <i class="bi bi-person-lines-fill me-2"></i>Student Records
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
-        <i class="bi bi-calendar-event"></i> Monthly Logs
-      </a>
-    </li>
-     <li class="nav-item">
-      <a class="nav-link text-white" href="{% url 'data_analysis' %}">
-        <i class="bi bi-bar-chart-line"></i> Data Analysis
-      </a>
-    </li>
-          <li class="nav-item">
-        <a class="nav-link text-white" href="{% url 'presence_logs_month' %}">
-          <i class="bi bi-calendar-event"></i> Monthly Logs
-        </a>
-      </li>
-       <li class="nav-item">
-        <a class="nav-link text-white" href="{% url 'data_analysis' %}">
-          <i class="bi bi-bar-chart-line"></i> Data Analysis
-        </a>
-      </li>
-
-    <!-- Archived Section -->
-    <li class="nav-item mt-3">
-      <div class="text-uppercase fw-bold small text-white-50 ps-2">Archived</div>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link text-white d-flex justify-content-between align-items-center
-   {% if request.resolver_match.url_name in 'presence_table student_records archived_logs archived_students' %}
-     active
-   {% endif %}"
-   data-bs-toggle="collapse"
-   href="#archivedCollapse"
-   role="button"
-   aria-expanded="{% if request.resolver_match.url_name in 'presence_table student_records archived_logs archived_students' %}true{% else %}false{% endif %}"
-   aria-controls="archivedCollapse">
-   Archived Records
-   <i class="bi bi-caret-down-fill"></i>
-</a>
-
-      <div class="collapse {% if request.resolver_match.url_name == 'presence_table' or request.resolver_match.url_name == 'student_records' or request.resolver_match.url_name == 'archived_logs' %}show{% endif %}"
-        id="archivedCollapse">
-        <ul class="nav flex-column ps-4 mt-1">
-          <li class="nav-item">
-            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_logs' %}active{% endif %}" href="{% url 'archived_logs' %}">
-              <i class="bi bi-box me-2"></i>Archived Logs
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active{% endif %}" href="{% url 'archived_students' %}">
-              <i class="bi bi-archive me-2"></i>Archived Students
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-white" href="{% url 'archived_analysis' %}">🧊 Archived Analysis</a>
-          </li>
-        </ul>
+    <!-- Branding -->
+    <div class="text-center mb-4">
+      <div class="position-relative d-inline-block">
+        <i class="bi bi-person-circle text-light fs-1"></i>
+        <i class="bi bi-shield-lock-fill text-warning position-absolute bottom-0 end-0" style="font-size: 0.8rem;"></i>
       </div>
-    </li>
-  </ul>
-  {% endblock %}
-</nav>
+      <h5 class="fw-bold mb-0">Student Tracker Admin</h5>
+      <small class="text-muted">Control Panel</small>
+    </div>
+
+    <!-- Info -->
+    <div class="mb-4 small text-white-50">
+      Use the navigation to manage presence, student records, logs, and archives.
+    </div>
+
+    <!-- Sidebar Menu -->
+    <ul class="nav flex-column">
+
+      <!-- Management -->
+      <li class="nav-item mb-2">
+        <div class="text-uppercase fw-bold small text-white-50 ps-2">Management</div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_table' %}active{% endif %}" href="{% url 'presence_table' %}">
+          <i class="bi bi-clock-history me-2"></i> Presence Records
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white {% if request.resolver_match.url_name == 'student_records' %}active{% endif %}" href="{% url 'student_records' %}">
+          <i class="bi bi-person-lines-fill me-2"></i> Student Records
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_logs_month' %}active{% endif %}" href="{% url 'presence_logs_month' %}">
+          <i class="bi bi-calendar-event me-2"></i> Monthly Logs
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white {% if request.resolver_match.url_name == 'data_analysis' %}active{% endif %}" href="{% url 'data_analysis' %}">
+          <i class="bi bi-bar-chart-line me-2"></i> Data Analysis
+        </a>
+      </li>
+
+      <!-- Archived -->
+      <li class="nav-item mt-3">
+        <div class="text-uppercase fw-bold small text-white-50 ps-2">Archived</div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white d-flex justify-content-between align-items-center
+          {% if request.resolver_match.url_name in 'archived_logs archived_students archived_analysis' %}active{% endif %}"
+          data-bs-toggle="collapse"
+          href="#archivedCollapse"
+          role="button"
+          aria-expanded="{% if request.resolver_match.url_name in 'archived_logs archived_students archived_analysis' %}true{% else %}false{% endif %}"
+          aria-controls="archivedCollapse">
+          <span><i class="bi bi-archive me-2"></i> Archived Records</span>
+          <i class="bi bi-caret-down-fill"></i>
+        </a>
+
+        <div class="collapse {% if request.resolver_match.url_name in 'archived_logs archived_students archived_analysis' %}show{% endif %}" id="archivedCollapse">
+          <ul class="nav flex-column ps-4 mt-1">
+            <li class="nav-item">
+              <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active{% endif %}" href="{% url 'archived_students' %}">
+                <i class="bi bi-people me-2"></i> Archived Students
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_logs' %}active{% endif %}" href="{% url 'archived_logs' %}">
+                <i class="bi bi-journal-text me-2"></i> Archived Logs
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_analysis' %}active{% endif %}" href="{% url 'archived_analysis' %}">
+                <i class="bi bi-bar-chart me-2"></i> Archived Analysis
+              </a>
+            </li>
+          </ul>
+        </div>
+        
+      </li>
+    </ul>
+    {% endblock %}
+  </nav>
 
   <!-- Page Content -->
   <div class="flex-grow-1 d-flex flex-column">
     <!-- Header -->
-<!-- <header class="d-flex align-items-center justify-content-between bg-white border-bottom shadow-sm px-4" style="height: 64px;"> -->
-  <!-- Left section: Logo + Title -->
-  <!-- <div class="d-flex align-items-center gap-2">
-    <h5 class="mb-0 fw-semibold text-dark">Admin Dashboard</h5>
-  </div> -->
+    <header class="d-flex align-items-center justify-content-between bg-light border-bottom p-3">
+  <!-- Left Side -->
+  <h5 class="mb-0 d-flex align-items-center">
+    <i class="bi bi-speedometer2 me-2 text-primary"></i> Admin Dashboard
+  </h5>
 
-<!-- Right section: Custom Profile Dropdown -->
-<!-- <div class="position-relative" id="customProfileDropdown">
-  <button class="btn d-flex align-items-center gap-2 border-0 bg-white text-dark text-decoration-none" id="profileToggleBtn" type="button">
-    <i class="bi bi-person-circle text-dark fs-3 me-1"></i>
-    <span class="d-none d-md-inline text-dark">
-      {{ request.user.get_full_name|default:request.user.username }}
-    </span>
-    <i class="bi bi-caret-down-fill text-dark"></i>
-  </button>
+  <!-- Right Side: User Dropdown with Icon -->
+  <div class="dropdown">
+    <button class="btn btn-light d-flex align-items-center dropdown-toggle" 
+            type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-person-circle fs-4 me-2 text-secondary"></i>
+      <span class="fw-semibold">Admin</span>
+    </button>
 
-  <div id="dropdownMenu" class="position-absolute end-0 mt-2 py-2 bg-white border rounded shadow-sm custom-dropdown-hidden" style="min-width: 180px; z-index: 999;">
-    <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark text-decoration-none" 
-   href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
-  <i class="bi bi-gear fs-5"></i> Settings
-</a>
+    <!-- Dropdown Menu -->
+    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+      <li>
+        <!-- Trigger Modal -->
+        <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+          <i class="bi bi-gear me-2"></i> Settings
+        </a>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <form action="{% url 'logout' %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="dropdown-item d-flex align-items-center text-danger">
+            <i class="bi bi-box-arrow-right me-2"></i> Logout
+          </button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</header>
 
-    <form action="{% url 'logout' %}" method="post" class="m-0">
-      {% csrf_token %}
-      <button type="submit" class="dropdown-item d-flex align-items-center gap-2 w-100 px-3 py-2 text-danger border-0 bg-white text-start">
-        <i class="bi bi-box-arrow-right fs-5 text-danger"></i> Logout
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-lg rounded-3 border-0">
+      
+      <!-- Header -->
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold" id="settingsModalLabel">
+          <i class="bi bi-gear me-2"></i> Admin Settings
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+              <i class="bi bi-person-circle me-1"></i> Profile
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+              <i class="bi bi-shield-lock me-1"></i> Security
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="preferences-tab" data-bs-toggle="tab" data-bs-target="#preferences" type="button" role="tab">
+              <i class="bi bi-sliders me-1"></i> Preferences
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="settingsTabsContent">
+          
+          <!-- Profile Tab -->
+          <div class="tab-pane fade show active" id="profile" role="tabpanel">
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body">
+                <h6 class="fw-bold text-primary mb-3">Profile Information</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="adminName" class="form-label"><i class="bi bi-person-fill me-1"></i> Full Name</label>
+                    <input type="text" class="form-control" id="adminName" value="Admin User">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="adminEmail" class="form-label"><i class="bi bi-envelope-fill me-1"></i> Email</label>
+                    <input type="email" class="form-control" id="adminEmail" value="admin@example.com">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Tab -->
+          <div class="tab-pane fade" id="security" role="tabpanel">
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body">
+                <h6 class="fw-bold text-primary mb-3">Security Settings</h6>
+                <div class="row g-3">
+  <!-- New Password -->
+  <div class="col-md-6">
+    <label for="adminPassword" class="form-label">
+      <i class="bi bi-key-fill me-1"></i> New Password
+    </label>
+    <div class="input-group">
+      <input type="password" class="form-control" id="adminPassword" placeholder="••••••••">
+      <button class="btn btn-outline-secondary" type="button" id="toggleAdminPassword">
+        <i class="bi bi-eye-slash"></i>
       </button>
-    </form>
+    </div>
+  </div>
+
+  <!-- Confirm Password -->
+  <div class="col-md-6">
+    <label for="confirmPassword" class="form-label">
+      <i class="bi bi-check2-circle me-1"></i> Confirm Password
+    </label>
+    <div class="input-group">
+      <input type="password" class="form-control" id="confirmPassword" placeholder="••••••••">
+      <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+        <i class="bi bi-eye-slash"></i>
+      </button>
+    </div>
   </div>
 </div>
 
-</header> -->
+              </div>
+            </div>
+          </div>
 
-    <header class="d-flex align-items-center justify-content-between bg-light border-bottom p-3">
-      <div class="d-flex align-items-center">
-        <h5 class="mb-0">Admin Dashboard</h5>
+          <!-- Preferences Tab -->
+          <div class="tab-pane fade" id="preferences" role="tabpanel">
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body">
+                <h6 class="fw-bold text-primary mb-3">Preferences</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="themeSelect" class="form-label"><i class="bi bi-palette-fill me-1"></i> Theme</label>
+                    <select class="form-select" id="themeSelect">
+                      <option selected>Light</option>
+                      <option>Dark</option>
+                      <option>Auto</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="languageSelect" class="form-label"><i class="bi bi-translate me-1"></i> Language</label>
+                    <select class="form-select" id="languageSelect">
+                      <option selected>English</option>
+                      <option>Spanish</option>
+                      <option>French</option>
+                      <option>Chinese</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
-      <form action="{% url 'logout' %}" method="post" class="mb-0">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-sm btn-danger">Logout</button>
-      </form>
-    </header>
+
+      <!-- Footer -->
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-primary">
+          <i class="bi bi-save me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <!-- Main Content -->
     <main class="p-4 overflow-auto" style="flex-grow: 1;">
@@ -266,101 +343,63 @@ body {
     </main>
   </div>
 
- <!-- Modal -->
-<!-- <div class="modal fade" id="settingsModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-body p-0">
-        <div class="row g-0"> -->
-          
-          <!-- Left Profile Card -->
-          <!-- <div class="col-md-4 bg-white profile-card">
-            <img src="https://via.placeholder.com/100" alt="Admin Photo">
-            <h5 class="mb-1">John Admin</h5>
-            <p class="text-muted">Administrator</p>
-            <hr>
-            <p><strong>Member Since:</strong> Jan 2023</p>
-            <p><strong>Email:</strong> admin@example.com</p>
-          </div> -->
-
-          <!-- Right Settings Tabs -->
-          <!-- <div class="col-md-8 p-3">
-            <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profileTab">Profile</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#securityTab">Security</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#preferencesTab">Preferences</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#systemTab">System Info</button></li>
-            </ul> -->
-
-            <!-- <div class="tab-content mt-3"> -->
-              
-              <!-- Profile Tab -->
-              <!-- <div class="tab-pane fade show active" id="profileTab">
-                <form>
-                  <div class="mb-3">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" class="form-control" value="John Admin">
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" class="form-control" value="admin@example.com">
-                  </div>
-                  <button type="button" class="btn btn-primary">Save Changes</button>
-                </form>
-              </div> -->
-
-              <!-- Security Tab -->
-              <!-- <div class="tab-pane fade" id="securityTab">
-                <p><strong>Password:</strong> ******** <button class="btn btn-sm btn-outline-primary">Change</button></p>
-                <p><strong>Two-Factor Authentication:</strong> <span class="badge bg-success badge-status">Enabled</span></p>
-                <p><strong>Last Login:</strong> Aug 10, 2025 - 09:14 AM</p>
-              </div> -->
-
-              <!-- Preferences Tab -->
-              <!-- <div class="tab-pane fade" id="preferencesTab">
-                <div class="form-check form-switch mb-2">
-                  <input class="form-check-input" type="checkbox" id="darkModeToggle">
-                  <label class="form-check-label" for="darkModeToggle">Dark Mode</label>
-                </div>
-                <div class="mb-2">
-                  <label class="form-label">Language</label>
-                  <select class="form-select">
-                    <option>English</option>
-                    <option>Filipino</option>
-                    <option>Spanish</option>
-                  </select>
-                </div>
-              </div> -->
-
-              <!-- System Info Tab -->
-              <!-- <div class="tab-pane fade" id="systemTab">
-                <p><strong>Role:</strong> Administrator</p>
-                <p><strong>System Version:</strong> 1.2.0</p>
-                <p><strong>Last Update:</strong> Aug 1, 2025</p>
-              </div> -->
-
-            <!-- </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div> -->
-
-
-
-  <!-- Modal Placeholder -->
-  {% block modals %}{% endblock %}
-
-  <!-- Optional Page JS -->
+  <!-- Scripts -->
   {% block extra_js %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'scripts/admin_page.js' %}"></script>
+
+  <script>
+  // Toggle New Password
+  document.getElementById("toggleAdminPassword").addEventListener("click", function () {
+    const input = document.getElementById("adminPassword");
+    const icon = this.querySelector("i");
+    if (input.type === "password") {
+      input.type = "text";
+      icon.classList.remove("bi-eye-slash");
+      icon.classList.add("bi-eye");
+    } else {
+      input.type = "password";
+      icon.classList.remove("bi-eye");
+      icon.classList.add("bi-eye-slash");
+    }
+  });
+
+  // Toggle Confirm Password
+  document.getElementById("toggleConfirmPassword").addEventListener("click", function () {
+    const input = document.getElementById("confirmPassword");
+    const icon = this.querySelector("i");
+    if (input.type === "password") {
+      input.type = "text";
+      icon.classList.remove("bi-eye-slash");
+      icon.classList.add("bi-eye");
+    } else {
+      input.type = "password";
+      icon.classList.remove("bi-eye");
+      icon.classList.add("bi-eye-slash");
+    }
+  });
+</script>
+
+  <script>
+    // Smooth scrolling when sidebar links are clicked
+    document.querySelectorAll("#sidebar .nav-link").forEach(link => {
+      link.addEventListener("click", function () {
+        setTimeout(() => {
+          const activeLink = document.querySelector("#sidebar .nav-link.active");
+          if (activeLink) {
+            activeLink.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 150);
+      });
+    });
+
+    // FIX: prevent collapse toggle blocking child links
+    document.querySelectorAll("#archivedCollapse a.nav-link").forEach(childLink => {
+      childLink.addEventListener("click", function (e) {
+        e.stopPropagation(); // prevent parent collapse toggle
+      });
+    });
+  </script>
   {% endblock %}
 </body>
 </html>

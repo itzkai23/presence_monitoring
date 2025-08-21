@@ -209,8 +209,6 @@ def verify_otp(request):
                     email=registration_data['email'],
                     course=registration_data['course'],
                     department=registration_data['department'],
-                    section=registration_data['section'],
-                    year_level=registration_data['year_level'],
                     password=make_password(registration_data['password'])
                 )
                 new_student.save()
@@ -473,7 +471,6 @@ def admin_page(request):
     students = Student.objects.filter(is_archived=False)  # 🟢 Show only active
     return render(request, 'users/Admin/admin_page.html', {
         'students': students,
-        'year_levels': settings.YEAR_LEVELS,
         'department_course_map': settings.DEPARTMENT_COURSE_MAP
     })
 
@@ -699,46 +696,36 @@ def delete_guest_log(request, log_id):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
-# -------------------------
-# UPDATE PURPOSE
-# -------------------------
+
 @csrf_exempt
 @require_POST
 def update_purpose(request, log_id):
     try:
         data = json.loads(request.body)
         new_purpose = data.get("purpose", "").strip()
+
         allowed_student_purposes = ["class", "appointment", "event", "study", "library"]
 
         log = PresenceLog.objects.get(id=log_id)
 
-        # Only today’s logs can be edited
-        if localtime(log.logs_timestamp).date() != localtime(now()).date():
+        if log.date.date() != now().date():
             return JsonResponse({"status": "error", "message": "Only today's logs can be edited."})
 
-        if log.role.lower() == "student":
+        if log.role == "Student":
             session_id = request.session.get("student_id")
             if session_id != (log.student.student_id if log.student else None):
                 return JsonResponse({"status": "error", "message": "You can only edit your own purpose."})
-
-            default_purpose = "class"
-            if log.purpose != default_purpose:
-                return JsonResponse({"status": "error", "message": "Students can only edit once per day."})
-
+            if log.edited:
+                return JsonResponse({"status": "error", "message": "Students can only edit once."})
             if new_purpose not in allowed_student_purposes:
                 return JsonResponse({"status": "error", "message": "Invalid purpose selection."})
 
             log.purpose = new_purpose
+            log.edited = True
 
-        elif log.role.lower() == "guest":
-            # Allow admins or monitors
-            if not request.user.is_authenticated or not (request.user.is_superuser or request.user.groups.filter(name='monitor').exists()):
-                return JsonResponse({"status": "error", "message": "Only admins or monitors can edit guest purposes."})
-
-            default_purpose = "visit"
-            if log.purpose != default_purpose:
-                return JsonResponse({"status": "error", "message": "Guest purpose already edited."})
-
+        elif log.role == "Guest":
+            if not request.user.is_authenticated or not request.user.is_superuser:
+                return JsonResponse({"status": "error", "message": "Only admins can edit guest purposes."})
             log.purpose = new_purpose
 
         log.save()

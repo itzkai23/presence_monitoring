@@ -6,7 +6,6 @@
 <head>
   {% block extra_css %}
     <link rel="stylesheet" href="{% static 'styles/presence_table.css' %}">
-    <link rel="stylesheet" href="{% static 'styles/base_admin.css' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
   {% endblock %}
@@ -17,21 +16,39 @@
   <div class="table-container">
     <div class="text-center mb-4">
     <h2 class="fw-bold text-uppercase text-primary-emphasis">
-      <i class="bi bi-calendar-check me-2"></i>Presence Logs
+        <i class="bi bi-clipboard-check text-primary-emphasis fs-1 me-2"></i>
+        Presence Logs Monitoring
     </h2>
     <p class="text-muted fs-6">
-      for <span class="fw-semibold">{% now "F d, Y" %}</span>
+        for <span class="fw-semibold">{% now "F d, Y" %}</span>
     </p>
-  </div>
+</div>
 
-    <input type="search" id="searchPresence" class="form-control search-input" placeholder="Search presence records..." />
+    <div class="input-group mb-3 position-relative">
+  <input 
+    type="text" 
+    id="searchPresence" 
+    class="form-control rounded pe-5" 
+    placeholder="Search presence records..."
+  >
+  <button 
+    class="btn position-absolute end-0 top-0 bottom-0 me-0" 
+    id="clearSearch" 
+    type="button" 
+    style="border: none; background: transparent; display: none;"
+  >
+    <i class="bi bi-x-circle-fill text-secondary"></i>
+  </button>
+</div>
 
+
+    
     <table class="table table-striped table-hover align-middle mt-3">
       <thead class="table-dark">
         <tr>
           <th>Student ID</th>
           <th>Name</th>
-          <th>Log Timestamp</th>
+          <th>Date</th>
           <th>Role</th>
           <th>Department</th>
           <th>Purpose</th>
@@ -40,7 +57,7 @@
         </tr>
       </thead>
       <tbody id="presenceTableBody">
-        <!-- Records injected by JS -->
+        <!-- Records will be dynamically injected by JS -->
       </tbody>
     </table>
   </div>
@@ -48,132 +65,25 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'scripts/presence_table.js' %}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', fetchPresenceLogs);
+  <script src="{% static 'scripts/presence_table.js' %}"></script>
 
-function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
+   <script>
+    const searchInput = document.getElementById("searchPresence");
+    const clearBtn = document.getElementById("clearSearch");
 
-function formatTimestamp(ts) {
-    if (!ts) return '';
-    const dateObj = new Date(ts);
-    return dateObj.toLocaleString('en-US', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: 'numeric', minute: '2-digit', hour12: true
+    searchInput.addEventListener("input", () => {
+      clearBtn.style.display = searchInput.value ? "block" : "none";
     });
-}
 
-const allowedStudentPurposes = ["class","appointment","event","study","library"];
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      clearBtn.style.display = "none";
+      searchInput.focus();
 
-async function fetchPresenceLogs() {
-    try {
-        const res = await fetch('/get-presence-logs/');
-        const data = await res.json();
-        const tbody = document.getElementById('presenceTableBody');
-        tbody.innerHTML = '';
-
-        const todayStr = new Date().toDateString();
-
-        data.forEach(log => {
-            const logDateStr = new Date(log.logs_timestamp || log.date).toDateString();
-            if (logDateStr !== todayStr) return;  // Only today
-
-            const snapshotHTML = log.snapshot
-                ? `<img src="${log.snapshot}" width="50"/>`
-                : '<hr style="width:50px;">';
-
-            // Purpose column
-            let purposeHTML = '';
-            if (log.role.toLowerCase() === 'student' && log.student) {
-                purposeHTML = `<select class="form-select form-select-sm purposeSelect" data-id="${log.id}">
-                    ${allowedStudentPurposes.map(p => `<option value="${p}" ${p === log.purpose ? 'selected' : ''}>${p}</option>`).join('')}
-                </select>`;
-            } else if (!log.student) {
-                purposeHTML = `<input type="text" class="form-control form-control-sm guestPurposeInput" data-id="${log.id}" value="${log.purpose}" />`;
-            } else {
-                purposeHTML = log.purpose;
-            }
-
-            // Actions column
-            const actionsHTML = `
-                ${!log.student ? `<button class="btn btn-sm btn-danger deleteGuestBtn" data-id="${log.id}">Delete</button>` : ''}
-            `;
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${log.student_id}</td>
-                <td>${log.name}</td>
-                <td>${formatTimestamp(log.logs_timestamp || log.date)}</td>
-                <td>${log.role}</td>
-                <td>${log.department}</td>
-                <td>${purposeHTML}</td>
-                <td>${snapshotHTML}</td>
-                <td>${actionsHTML}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (err) {
-        console.error("Failed to fetch presence logs:", err);
-    }
-}
-
-// Purpose updates immediately on change or Enter
-document.addEventListener('change', async (e) => {
-    if (e.target.classList.contains('purposeSelect') || e.target.classList.contains('guestPurposeInput')) {
-        await updatePurpose(e.target.dataset.id, e.target.value, e.target);
-    }
-});
-
-document.addEventListener('keypress', async (e) => {
-    if (e.target.classList.contains('guestPurposeInput') && e.key === 'Enter') {
-        e.preventDefault();
-        await updatePurpose(e.target.dataset.id, e.target.value, e.target);
-    }
-});
-
-document.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('deleteGuestBtn')) {
-        const logId = e.target.dataset.id;
-        if (!confirm('Delete this guest log?')) return;
-
-        const res = await fetch(`/delete-guest-log/${logId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Accept': 'application/json',
-            }
-        });
-        const data = await res.json();
-        alert(data.message);
-        if (data.status === 'success') fetchPresenceLogs();
-    }
-});
-
-async function updatePurpose(logId, newPurpose, element) {
-    if (!newPurpose) return;
-    try {
-        const res = await fetch(`/update-purpose/${logId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({purpose: newPurpose})
-        });
-        const data = await res.json();
-        alert(data.message);
-
-        if (data.status === 'success') {
-            // Disable after saving to enforce single edit
-            if (element) element.disabled = true;
-            fetchPresenceLogs();
-        }
-    } catch(err) {
-        console.error("Failed to update purpose:", err);
-    }
-}
-</script>
+      // Optional: reset your table filter here
+      // filterPresenceRecords("");
+    });
+  </script>
 {% endblock %}
+</body>
+</html>

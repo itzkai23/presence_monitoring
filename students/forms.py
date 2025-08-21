@@ -60,9 +60,10 @@ class StudentRegistrationForm(forms.ModelForm):
             'password': 'Password',
         }
         widgets = {
-            'student_id': forms.TextInput(attrs={
+            'student_id': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter your student id'
+                'placeholder': 'Enter your student id',
+                'min': '0'
             }),
             'first_name': forms.TextInput(attrs={
                 'class': 'form-control',

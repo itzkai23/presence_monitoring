@@ -17,7 +17,23 @@
     </h2>
   </div>  
 
-  <input type="search" id="searchArchive" class="form-control mb-3" placeholder="Search archived records..." />
+  <div class="input-group mb-3 position-relative">
+  <input 
+    type="text" 
+    id="searchArchive" 
+    class="form-control rounded pe-5" 
+    placeholder="Search archived records..."
+  >
+  <button 
+    class="btn position-absolute end-0 top-0 bottom-0 me-0" 
+    id="clearArchiveSearch" 
+    type="button" 
+    style="border: none; background: transparent; display: none;"
+  >
+    <i class="bi bi-x-circle-fill text-secondary"></i>
+  </button>
+</div>
+
 
   {% if archived_logs %}
   <div class="table-responsive">
@@ -65,7 +81,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<!-- <script>
   // Client-side search
   document.getElementById('searchArchive').addEventListener('keyup', function () {
     const keyword = this.value.toLowerCase();
@@ -73,5 +89,32 @@
       row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
     });
   });
+</script> -->
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("searchArchive");
+  const clearBtn = document.getElementById("clearArchiveSearch");
+  const rows = document.querySelectorAll("#archiveTableBody tr");
+
+  // show/hide clear button
+  searchInput.addEventListener("input", () => {
+    clearBtn.style.display = searchInput.value ? "block" : "none";
+
+    const keyword = searchInput.value.toLowerCase();
+    rows.forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(keyword) ? "" : "none";
+    });
+  });
+
+  // clear search
+  clearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    clearBtn.style.display = "none";
+    searchInput.focus();
+
+    rows.forEach(row => (row.style.display = "")); // reset table
+  });
+});
 </script>
 {% endblock %}
