@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Camera Test</title>
+</head>
+<body>
+  <h2>Camera Selection Test</h2>
+
+  <label for="cameras">Choose camera: </label>
+  <select id="cameras"></select>
+  <button id="startBtn">Start Camera</button>
+
+  <br><br>
+  <video id="cam" autoplay playsinline muted style="width:500px; border:1px solid #000;"></video>
+
+  <script>
+    const videoElement = document.getElementById("cam");
+    const camerasSelect = document.getElementById("cameras");
+    const startBtn = document.getElementById("startBtn");
+    let currentStream;
+
+    async function listCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === "videoinput");
+
+      camerasSelect.innerHTML = "";
+      videoDevices.forEach(device => {
+        const option = document.createElement("option");
+        option.value = device.deviceId;
+        option.text = device.label || `Camera ${camerasSelect.length + 1}`;
+        camerasSelect.appendChild(option);
+      });
+    }
+
+    async function startCamera(deviceId) {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId } }
+        });
+        videoElement.srcObject = currentStream;
+      } catch (err) {
+        console.error("Camera error:", err.name, err.message);
+        alert("Camera error: " + err.name + " - " + err.message);
+      }
+    }
+
+    startBtn.addEventListener("click", () => {
+      const deviceId = camerasSelect.value;
+      if (deviceId) {
+        startCamera(deviceId);
+      }
+    });
+
+    // Load cameras on page load
+    listCameras();
+  </script>
+</body>
+</html>

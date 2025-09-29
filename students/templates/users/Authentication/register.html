@@ -170,7 +170,7 @@
             </div>
         {% endif %}
 
-            <form id="registration-form" method="POST" class="p-4 rounded shadow snake-border">
+            <form id="registration-form" method="POST" class="p-4 rounded shadow snake-border" autocomplete="off">
                 <h2 class="mb-4 text-center fw-bold text-light glow-white">Student Registration</h2>
             {% csrf_token %}
 
@@ -205,7 +205,7 @@
                 {{ form.course }}
             </div>
 
-            <div class="mb-3">
+            <!-- <div class="mb-3">
                 <label for="id_section" class="form-label fw-semibold">Section</label>
                 {{ form.section }}
             </div>
@@ -213,7 +213,7 @@
             <div class="mb-3">
                 <label for="id_year_level" class="form-label fw-semibold">Year Level</label>
                 {{ form.year_level }}
-            </div>
+            </div> -->
 
             <div class="mb-3">
                 <label for="id_password" class="form-label fw-semibold">Password</label>

@@ -149,8 +149,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = '202201689@cityofmalabonuniversity.edu.ph'
-EMAIL_HOST_PASSWORD = 'vdyxivfdpyhzjied'  # Use App Password if using Gmail
+EMAIL_HOST_USER = 'bobduran5912024@gmail.com'
+EMAIL_HOST_PASSWORD = 'gzqy mqkb pdny rarh'  # Use App Password if using Gmail
 
 
 # Constants
@@ -181,3 +181,4 @@ TIME_ZONE = 'Asia/Manila'
 
 DEBUG = True  # when ready for production
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+

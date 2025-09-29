@@ -9,25 +9,26 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     .container {
-      max-width: 400px;
+      max-width: 420px;
       margin-top: 100px;
     }
 
     .form-container {
       background: #fff;
       padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0px 0px 15px rgba(0,0,0,0.1);
-    }
-
-    .message {
-      margin-top: 15px;
+      border-radius: 15px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
     }
 
     .logo {
       display: block;
       margin: 0 auto 20px auto;
       width: 80px;
+    }
+
+    .message {
+      margin-top: 15px;
+      font-size: 0.95rem;
     }
   </style>
 </head>
@@ -38,17 +39,32 @@
       <!-- Logo -->
       <img src="{% static 'logimages/logo.png' %}" alt="Logo" class="logo">
 
-      <h3 class="text-center mb-3">Forgot Password</h3>
+      <h3 class="text-center mb-3 fw-bold">Forgot Password</h3>
+      <p class="text-center text-muted small">
+        Enter your registered email. We’ll send you a One-Time Password (OTP) to reset your account.
+      </p>
+
       <form id="forgotForm">
         {% csrf_token %}
         <div class="mb-3">
-          <label for="email" class="form-label">Enter your registered email</label>
-          <input type="email" class="form-control" id="email" name="email" placeholder="Enter your university email" required>
+          <label for="email" class="form-label fw-semibold">Email</label>
+          <input 
+            type="email" 
+            class="form-control rounded-pill" 
+            id="email" 
+            name="email" 
+            placeholder="yourname@university.edu"
+            required
+          >
           <input type="hidden" id="csrf_token" value="{{ csrf_token }}">
         </div>
-        <button type="submit" class="btn btn-primary w-100">Submit</button>
+        <button type="submit" class="btn btn-primary w-100 rounded-pill">
+          Send OTP
+        </button>
       </form>
-      <div class="message text-center" id="responseMessage"></div>
+
+      <!-- Message -->
+      <div class="message text-center fw-semibold" id="responseMessage"></div>
     </div>
   </div>
 
@@ -56,9 +72,12 @@
     document.getElementById('forgotForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const csrfToken = document.getElementById('csrf_token').value;
       const messageDiv = document.getElementById('responseMessage');
+
+      messageDiv.textContent = "⏳ Processing...";
+      messageDiv.className = "message text-center text-muted fw-semibold";
 
       try {
         const response = await fetch("{% url 'forpass' %}", {
@@ -74,20 +93,17 @@
 
         if (data.status === 'otp_sent' || data.status === 'success') {
           messageDiv.textContent = data.message;
-          messageDiv.classList.remove('text-danger');
-          messageDiv.classList.add('text-success');
+          messageDiv.className = "message text-center text-success fw-semibold";
           setTimeout(() => {
             window.location.href = "{% url 'verify_reset_otp' %}";
-          }, 1000);
+          }, 1200);
         } else {
           messageDiv.textContent = data.message;
-          messageDiv.classList.remove('text-success');
-          messageDiv.classList.add('text-danger');
+          messageDiv.className = "message text-center text-danger fw-semibold";
         }
       } catch (err) {
-        messageDiv.textContent = 'Something went wrong.';
-        messageDiv.classList.remove('text-success');
-        messageDiv.classList.add('text-danger');
+        messageDiv.textContent = '❌ Something went wrong. Please try again.';
+        messageDiv.className = "message text-center text-danger fw-semibold";
       }
     });
   </script>

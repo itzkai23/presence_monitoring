@@ -7,9 +7,26 @@
 <div class="container">
   <div class="text-center mb-4">
     <h2 class="fw-bold text-uppercase text-primary-emphasis">
-      <i class="bi bi-archive me-2"></i>Archived Students
+      <i class="bi bi-people me-2"></i>Archived Students
     </h2>
-  </div>  
+  </div>
+  
+  <div class="col-md-6 position-relative">
+  <input 
+    type="text" 
+    id="searchArcstudents" 
+    class="form-control rounded pe-5 mb-3" 
+    placeholder="Search archived students..."
+  >
+  <button 
+    class="btn position-absolute end-0 top-0 bottom-0 me-0" 
+    id="clearSearch" 
+    type="button" 
+    style="border: none; background: transparent; display: none;"
+  >
+    <i class="bi bi-x-circle-fill text-secondary"></i>
+  </button>
+</div>
 
   {% if archived_students %}
   <div class="table-responsive">
@@ -85,4 +102,22 @@
     return csrf ? csrf.split("=")[1] : "";
   }
 </script>
+
+<script>
+    const searchInput = document.getElementById("searchArcstudents");
+    const clearBtn = document.getElementById("clearSearch");
+
+    searchInput.addEventListener("input", () => {
+      clearBtn.style.display = searchInput.value ? "block" : "none";
+    });
+
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      clearBtn.style.display = "none";
+      searchInput.focus();
+
+      // Optional: reset your table filter here
+      // filterPresenceRecords("");
+    });
+  </script>
 {% endblock %}

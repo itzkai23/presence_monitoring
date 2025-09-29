@@ -437,6 +437,10 @@ body::after {
         </button>
       </div>
 
+      <div class="text-start mt-3 mb-2">
+      <a href="{% url 'forpass' %}" class="text-decoration-none">Forgot Password?</a>
+      </div>
+
       <div class="d-grid">
         <button type="submit" class="btn btn-primary btn-lg">
           <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
@@ -477,6 +481,4 @@ body::after {
     eyeIcon.classList.toggle('bi-eye-slash');
   });
 </script>
-
-
 {% endblock %}

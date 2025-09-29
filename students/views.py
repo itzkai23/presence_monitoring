@@ -17,8 +17,8 @@ import base64
 from django.conf import settings
 from django.utils.timezone import now
 from .utils.utils import archive_last_month_logs, archive_last_month_analysis
-from .models import DataAnalysis, ArchivedDataAnalysis, ArchivedPresenceLog, PresenceLog
-from .utils.encoding_utils import regenerate_encodings  
+from .models import DataAnalysis, ArchivedDataAnalysis, ArchivedPresenceLog, PresenceLog, ArchivedStudent
+from .utils.encoding_utils import regenerate_encodings      
 import os
 import sys
 from django.http import FileResponse
@@ -53,7 +53,7 @@ from students.data_analysis import (
     generate_weekly_summary,
     generate_monthly_summary
 )
-
+from django.core.files import File
 
 # Login / Logout
 def login_view(request):
@@ -85,6 +85,31 @@ def login_view(request):
             error_message = 'Student ID not found.'
 
     return render(request, 'users/Authentication/login.html', {'error': error_message})
+
+# ----------------------------
+# Admin Login
+# ----------------------------
+def admin_login_view(request):
+    error_message = ''
+
+    if request.method == 'POST':
+        username = request.POST.get('username')  # ✅ admin uses username instead of student_id
+        password = request.POST.get('password')
+
+        user = User.objects.filter(username=username).first()
+        if user and user.check_password(password):
+            login(request, user)
+            if user.is_superuser:
+                return redirect('presence_table')
+            elif user.groups.filter(name='monitor').exists():
+                return redirect('presence_record')
+            else:
+                return redirect('home')  # fallback
+        else:
+            error_message = 'Invalid username or password.'
+
+    return render(request, 'users/Authentication/admin_login.html', {'error': error_message})
+
 
 def logout_view(request):
     logout(request)
@@ -224,10 +249,25 @@ def home(request):
         return redirect('login')
     return render(request, 'users/Interface/home.html')
 
+# -------------------------
+# Data Analysis Views
+# -------------------------
 @login_required
 @admin_required
 def data_analysis(request):
     import logging
+    import json
+    import pandas as pd
+    from datetime import timedelta, date, datetime
+    import calendar as cal
+    from django.utils import timezone
+    from .models import Student, DataAnalysis, PresenceLog
+    from .data_analysis import (
+        generate_daily_summary,
+        generate_weekly_summary,
+        generate_monthly_summary,
+    )
+
     logger = logging.getLogger(__name__)
     today = timezone.localdate()
 
@@ -239,22 +279,44 @@ def data_analysis(request):
     logger.info(f"Fetched {len(logs_df)} logs from PresenceLog.")
 
     if not logs_df.empty:
-        if 'logs_timestamp' not in logs_df.columns:
-            logs_df['logs_timestamp'] = pd.NaT
-        else:
-            logs_df['logs_timestamp'] = pd.to_datetime(logs_df['logs_timestamp'], errors='coerce')
-        logs_df = logs_df.dropna(subset=['logs_timestamp'])
-        logs_df['log_date'] = logs_df['logs_timestamp'].dt.date
-    else:
-        logs_df = pd.DataFrame(columns=['logs_timestamp', 'role', 'student_id', 'purpose', 'department'])
+        # Ensure logs_timestamp column with proper timezone handling
+        local_tz = timezone.get_current_timezone()
+        logs_df["logs_timestamp"] = pd.to_datetime(
+            logs_df.get("logs_timestamp", pd.NaT),
+            errors="coerce",
+            utc=True
+        )
+        logs_df = logs_df.dropna(subset=["logs_timestamp"])
+        logs_df["logs_timestamp"] = logs_df["logs_timestamp"].dt.tz_convert(local_tz)
 
-    from .data_analysis import generate_daily_summary, generate_weekly_summary, generate_monthly_summary
-    from datetime import timedelta, date
-    import calendar
-    import calendar as cal
+        # Add date-only column for grouping
+        logs_df["log_date"] = logs_df["logs_timestamp"].dt.date
+
+        # Normalize role column
+        logs_df["role"] = logs_df.get("role", "").fillna("").astype(str).str.lower()
+
+        # Ensure student_id column
+        if "student__student_id" in logs_df.columns and "student_id" not in logs_df.columns:
+            logs_df["student_id"] = logs_df["student__student_id"]
+        elif "student_id" not in logs_df.columns:
+            if "student" in logs_df.columns:
+                try:
+                    pks = logs_df["student"].dropna().unique().tolist()
+                    student_map = dict(
+                        Student.objects.filter(pk__in=pks).values_list("pk", "student_id")
+                    )
+                    logs_df["student_id"] = logs_df["student"].map(student_map).fillna(pd.NA)
+                except Exception:
+                    logs_df["student_id"] = pd.NA
+            else:
+                logs_df["student_id"] = pd.NA
+    else:
+        logs_df = pd.DataFrame(
+            columns=["logs_timestamp", "role", "student_id", "purpose", "department"]
+        )
 
     # ------------------------
-    # Helper: month info
+    # Period helpers
     # ------------------------
     month_start = today.replace(day=1)
     days_up_to_today = [month_start + timedelta(days=i) for i in range((today - month_start).days + 1)]
@@ -270,221 +332,345 @@ def data_analysis(request):
         return sundays
 
     sundays = get_sundays(today.year, today.month, today)
-
     all_summaries = []
 
     # ------------------------
     # Daily summaries
     # ------------------------
     for d in days_up_to_today:
-        try:
+        if d == today:
             summary_text = generate_daily_summary(logs_df, d)
-        except Exception as e:
-            summary_text = f"Error generating daily summary: {e}"
-            logger.error(summary_text)
-        # Convert to single paragraph
-        summary_text = ' '.join(summary_text.split())
+            DataAnalysis.objects.update_or_create(
+                summary_type="daily",
+                summary_date=d,
+                defaults={"analysis_summary": summary_text},
+            )
+        else:
+            obj, _ = DataAnalysis.objects.get_or_create(
+                summary_type="daily",
+                summary_date=d,
+                defaults={"analysis_summary": generate_daily_summary(logs_df, d)},
+            )
+            summary_text = obj.analysis_summary
+
+        summary_text = " ".join(summary_text.split())
         all_summaries.append({
-            'summary_date': d,
-            'analysis_summary': summary_text,
-            'summary_type': 'daily',
-            'day_of_week': calendar.day_name[d.weekday()]
+            "summary_date": d,
+            "analysis_summary": summary_text,
+            "summary_type": "daily",
+            "day_of_week": cal.day_name[d.weekday()],
+            "is_previous_month": d.month != today.month or d.year != today.year,
         })
 
     # ------------------------
-    # Weekly summaries (only Sundays)
+    # Weekly summaries
     # ------------------------
     for sunday in sundays:
-        week_start = sunday - timedelta(days=6)
-        if week_start < month_start:
-            week_start = month_start
-        try:
+        week_start = max(sunday - timedelta(days=6), month_start)
+        if sunday == today:
             summary_text = generate_weekly_summary(logs_df, week_start)
-        except Exception as e:
-            summary_text = f"Error generating weekly summary: {e}"
-            logger.error(summary_text)
-        summary_text = ' '.join(summary_text.split())
+            DataAnalysis.objects.update_or_create(
+                summary_type="weekly",
+                summary_date=sunday,
+                defaults={"analysis_summary": summary_text},
+            )
+        else:
+            obj, _ = DataAnalysis.objects.get_or_create(
+                summary_type="weekly",
+                summary_date=sunday,
+                defaults={"analysis_summary": generate_weekly_summary(logs_df, week_start)},
+            )
+            summary_text = obj.analysis_summary
+
+        summary_text = " ".join(summary_text.split())
         all_summaries.append({
-            'summary_date': sunday,
-            'analysis_summary': summary_text,
-            'summary_type': 'weekly',
-            'day_of_week': calendar.day_name[sunday.weekday()]
+            "summary_date": sunday,
+            "analysis_summary": summary_text,
+            "summary_type": "weekly",
+            "day_of_week": cal.day_name[sunday.weekday()],
+            "is_previous_month": sunday.month != today.month or sunday.year != today.year,
         })
 
     # ------------------------
     # Monthly summary
     # ------------------------
-    # Check if today is the last day of the month
     last_day_of_month = cal.monthrange(today.year, today.month)[1]
     monthly_summary = None
+
     if today.day == last_day_of_month:
-        try:
-            monthly_summary_text = generate_monthly_summary(logs_df, month_start)
-        except Exception as e:
-            monthly_summary_text = f"Error generating monthly summary: {e}"
-            logger.error(monthly_summary_text)
-        monthly_summary_text = ' '.join(monthly_summary_text.split())
-
+        summary_text = generate_monthly_summary(logs_df, month_start)
+        DataAnalysis.objects.update_or_create(
+            summary_type="monthly",
+            summary_date=month_start,
+            defaults={"analysis_summary": summary_text},
+        )
+        summary_text = " ".join(summary_text.split())
         monthly_summary = {
-            'summary_date': today,
-            'analysis_summary': monthly_summary_text,
-            'summary_type': 'monthly',
-            'day_of_week': calendar.day_name[today.weekday()]
+            "summary_date": today,
+            "analysis_summary": summary_text,
+            "summary_type": "monthly",
+            "day_of_week": cal.day_name[today.weekday()],
+            "is_previous_month": False,
         }
-
-    # ------------------------
-    # Sort all summaries: latest first
-    # ------------------------
-    all_summaries.sort(key=lambda x: x['summary_date'], reverse=True)
-
-    # ------------------------
-    # Debug: fallback if logs_df empty
-    # ------------------------
-    if logs_df.empty:
-        logger.warning("PresenceLog table is empty. No summaries will be generated.")
-
-    return render(request, 'users/Admin/data_analysis.html', {
-        'combined_summaries': all_summaries,
-        'monthly_summary': monthly_summary,
-    })
-
-
-def normalize_summary_date(summary_date, period):
-    """
-    Aligns summary_date to the correct start date for the given period.
-    - daily: same date
-    - weekly: Monday of the week containing summary_date (matches update_summary storage)
-    - monthly: first day of the month
-    """
-    if period == "daily":
-        return summary_date
-    elif period == "weekly":
-        # Return Monday of the week containing the date
-        return summary_date - timedelta(days=summary_date.weekday())
-    elif period == "monthly":
-        return summary_date.replace(day=1)
     else:
-        raise ValueError(f"Invalid period: {period}")
-    
+        try:
+            obj = DataAnalysis.objects.get(summary_type="monthly", summary_date=month_start)
+            monthly_summary = {
+                "summary_date": today,
+                "analysis_summary": obj.analysis_summary,
+                "summary_type": "monthly",
+                "day_of_week": cal.day_name[today.weekday()],
+                "is_previous_month": False,
+            }
+        except DataAnalysis.DoesNotExist:
+            pass
+
+    # ------------------------
+    # Sort summaries
+    # ------------------------
+    all_summaries.sort(key=lambda x: x["summary_date"], reverse=True)
+
+    # ------------------------
+    # Chart Data
+    # ------------------------
+    labels = [str(d) for d in days_up_to_today]
+    student_counts, guest_counts = [], []
+
+    if not logs_df.empty:
+        for d in days_up_to_today:
+            daily_logs = logs_df[logs_df["log_date"] == d]
+            student_counts.append(int(daily_logs[daily_logs["role"] == "student"]["student_id"].nunique()))
+            guest_counts.append(int(len(daily_logs[daily_logs["role"] == "guest"])) )
+
+        # Hourly data for today
+        hours = list(range(24))
+        # Convert 24-hour to 12-hour format with AM/PM
+        hour_labels = [
+            datetime.strptime(str(h), "%H").strftime("%I %p").lstrip("0")
+            for h in hours
+        ]
+        hourly_student_counts = []
+        hourly_guest_counts = []
+        today_logs = logs_df[logs_df["log_date"] == today]
+        for h in hours:
+            hour_logs = today_logs[today_logs["logs_timestamp"].dt.hour == h]
+            hourly_student_counts.append(int(hour_logs[hour_logs["role"] == "student"]["student_id"].nunique()))
+            hourly_guest_counts.append(int(len(hour_logs[hour_logs["role"] == "guest"])))
+
+        purpose_counts_series = logs_df["purpose"].value_counts() if "purpose" in logs_df.columns else pd.Series([])
+        purposes = purpose_counts_series.index.tolist()
+        purpose_counts = purpose_counts_series.values.tolist()
+    else:
+        student_counts = guest_counts = hourly_student_counts = hourly_guest_counts = [0]*24
+        hour_labels = [(datetime.strptime(str(h), "%H").strftime("%I %p").lstrip("0")) for h in range(24)]
+        purposes, purpose_counts = [], []
+
+    return render(
+        request,
+        "users/Admin/data_analysis.html",
+        {
+            "combined_summaries": all_summaries,
+            "monthly_summary": monthly_summary,
+            "month_label": today.strftime("%B %Y"),
+            "labels": json.dumps(labels),
+            "student_values": json.dumps(student_counts),
+            "guest_values": json.dumps(guest_counts),
+            "hour_labels": json.dumps(hour_labels),
+            "hourly_student_values": json.dumps(hourly_student_counts),
+            "hourly_guest_values": json.dumps(hourly_guest_counts),
+            "purposes": json.dumps(purposes),
+            "purpose_counts": json.dumps(purpose_counts),
+        },
+    )
+
 def update_summary(summary_type, reference_date):
-    """Update DataAnalysis with consistent counting rules for students (unique) and guests (row count)."""
+    """
+    Update only if reference_date is "active" (today for daily,
+    today's Sunday for weekly, or last day of month for monthly).
+    Otherwise leave past summaries frozen.
+    """
     from .models import PresenceLog, DataAnalysis
     import pandas as pd
-    from datetime import timedelta, date
-    from .data_analysis import generate_daily_summary, generate_weekly_summary, generate_monthly_summary
+    from datetime import timedelta
+    import calendar
+    from .data_analysis import (
+        generate_daily_summary,
+        generate_weekly_summary,
+        generate_monthly_summary,
+    )
 
-    # 1️⃣ Determine date range
-    if summary_type == 'daily':
+    today = timezone.localdate()
+
+    # Decide if regeneration allowed
+    allow_update = (
+        (summary_type == "daily" and reference_date == today)
+        or (summary_type == "weekly" and reference_date == today)
+        or (
+            summary_type == "monthly"
+            and reference_date.day == calendar.monthrange(today.year, today.month)[1]
+            and reference_date == today.replace(day=1)
+        )
+    )
+    if not allow_update:
+        return  # freeze history
+
+    # Normal update process
+    if summary_type == "daily":
         start_date = reference_date
         end_date = reference_date
         store_date = start_date
-    elif summary_type == 'weekly':
-        start_date = reference_date - timedelta(days=reference_date.weekday())  # Monday
-        end_date = start_date + timedelta(days=6)  # Sunday
-        store_date = end_date  # store weekly summary under Sunday
-    elif summary_type == 'monthly':
+        summary_fn = generate_daily_summary
+    elif summary_type == "weekly":
+        start_date = reference_date - timedelta(days=reference_date.weekday())
+        end_date = start_date + timedelta(days=6)
+        store_date = reference_date
+        summary_fn = generate_weekly_summary
+    elif summary_type == "monthly":
         start_date = reference_date.replace(day=1)
-        # end_date = last day of month
         next_month = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
         end_date = next_month - timedelta(days=1)
         store_date = start_date
-    else:
-        raise ValueError("Invalid summary type")
+        summary_fn = generate_monthly_summary
 
-    # 2️⃣ Fetch logs for the date range
-    logs_qs = PresenceLog.objects.filter(logs_timestamp__date__range=[start_date, end_date])
+    logs_qs = PresenceLog.objects.filter(
+        logs_timestamp__date__range=[start_date, end_date]
+    )
     logs_df = pd.DataFrame(list(logs_qs.values()))
+    logs_df["logs_timestamp"] = pd.to_datetime(
+        logs_df.get("logs_timestamp", pd.NaT), errors="coerce"
+    )
+    logs_df = logs_df.dropna(subset=["logs_timestamp"])
+    logs_df["log_date"] = logs_df["logs_timestamp"].dt.date
+    logs_df["role"] = logs_df.get("role", "").fillna("").astype(str).str.lower()
 
-    # 3️⃣ Ensure datetime column exists
-    if not logs_df.empty:
-        if 'logs_timestamp' not in logs_df.columns:
-            logs_df['logs_timestamp'] = pd.NaT
-        else:
-            logs_df['logs_timestamp'] = pd.to_datetime(logs_df['logs_timestamp'], errors='coerce')
-        logs_df = logs_df.dropna(subset=['logs_timestamp'])
-        # Add log_date column for summaries
-        logs_df['log_date'] = logs_df['logs_timestamp'].dt.date
-    else:
-        logs_df = pd.DataFrame(columns=['logs_timestamp', 'role', 'student_id', 'purpose', 'department', 'log_date'])
+    summary_text = summary_fn(logs_df, start_date)
 
-    # 4️⃣ Ensure role column exists
-    if 'role' not in logs_df.columns:
-        logs_df['role'] = ''
-
-    # 5️⃣ Counting logic
-    students_count = logs_df.loc[logs_df['role'].str.lower() == 'student', 'student_id'].nunique() if not logs_df.empty else 0
-    guests_count = int((logs_df['role'].str.lower() == 'guest').sum()) if not logs_df.empty else 0
-
-    # 6️⃣ Generate textual summary
-    try:
-        if summary_type == 'daily':
-            summary_text = generate_daily_summary(logs_df, start_date)
-        elif summary_type == 'weekly':
-            summary_text = generate_weekly_summary(logs_df, start_date)
-        elif summary_type == 'monthly':
-            summary_text = generate_monthly_summary(logs_df, start_date)
-    except Exception as e:
-        summary_text = f"Error generating summary: {e}"
-
-    # 7️⃣ Save or update DataAnalysis
     DataAnalysis.objects.update_or_create(
         summary_type=summary_type,
         summary_date=store_date,
-        defaults={
-            'student_total': students_count,
-            'guest_total': guests_count,
-            'analysis_summary': summary_text
-        }
+        defaults={"analysis_summary": summary_text},
     )
-
+    
+# -------------------------
+# SINGLE ARCHIVE
+# -------------------------
 @admin_required
-def archived_analysis_view(request):
-    archived_entries = ArchivedDataAnalysis.objects.select_related('reference').order_by('-archived_at')
+@require_POST
+def archive_data_analysis(request, analysis_id):
+    from django.db import transaction
 
-    return render(request, 'users/Admin/archived_analysis.html', {
-        'archived_entries': archived_entries
+    analysis = get_object_or_404(DataAnalysis, id=analysis_id)
+    today = timezone.localdate()
+
+    # Determine if the summary is from a previous month
+    is_previous_month = False
+    if analysis.summary_type == "daily":
+        is_previous_month = (
+            analysis.summary_date.month != today.month
+            or analysis.summary_date.year != today.year
+        )
+    elif analysis.summary_type == "weekly":
+        # Weekly summaries are anchored to Sunday
+        # If that Sunday is still in the current month, don’t archive
+        is_previous_month = (
+            analysis.summary_date.month != today.month
+            or analysis.summary_date.year != today.year
+        )
+    elif analysis.summary_type == "monthly":
+        is_previous_month = not (
+            analysis.summary_date.year == today.year
+            and analysis.summary_date.month == today.month
+        )
+
+    if not is_previous_month:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Cannot archive current month\'s summary.'
+        })
+
+    with transaction.atomic():
+        ArchivedDataAnalysis.objects.get_or_create(
+            summary_type=analysis.summary_type,
+            summary_date=analysis.summary_date,
+            defaults={'analysis_summary': analysis.analysis_summary},
+        )
+        analysis.delete()
+
+    return JsonResponse({'status': 'success', 'message': 'Analysis archived successfully.'})
+
+
+# -------------------------
+# BULK ARCHIVE
+# -------------------------
+@admin_required
+@require_POST
+def bulk_archive_data_analysis(request):
+    from django.db import transaction
+
+    ids = request.POST.getlist('ids[]')
+    today = timezone.localdate()
+    success_count, failed_count = 0, 0
+
+    for id_str in ids:
+        try:
+            analysis = DataAnalysis.objects.get(id=int(id_str))
+
+            # Determine if the summary is from a previous month
+            is_previous_month = False
+            if analysis.summary_type == "daily":
+                is_previous_month = (
+                    analysis.summary_date.month != today.month
+                    or analysis.summary_date.year != today.year
+                )
+            elif analysis.summary_type == "weekly":
+                is_previous_month = (
+                    analysis.summary_date.month != today.month
+                    or analysis.summary_date.year != today.year
+                )
+            elif analysis.summary_type == "monthly":
+                is_previous_month = not (
+                    analysis.summary_date.year == today.year
+                    and analysis.summary_date.month == today.month
+                )
+
+            if not is_previous_month:
+                failed_count += 1
+                continue
+
+            with transaction.atomic():
+                ArchivedDataAnalysis.objects.get_or_create(
+                    summary_type=analysis.summary_type,
+                    summary_date=analysis.summary_date,
+                    defaults={'analysis_summary': analysis.analysis_summary},
+                )
+                analysis.delete()
+                success_count += 1
+
+        except DataAnalysis.DoesNotExist:
+            failed_count += 1
+
+    return JsonResponse({
+        'status': 'success',
+        'message': f'{success_count} summaries archived. {failed_count} skipped.'
     })
 
 
-@login_required
-@admin_required
-def presence_table(request):
-    # If student is logged in via session (not Django auth), redirect them to their UI
-    if request.session.get('student_id'):
-        return redirect('home')
-
-    # ✅ Allow admin
-    if request.user.is_superuser:
-        archive_last_month_logs()                       # ⬅️ run auto‑archive if today is the 1st
-        return render(request, 'users/Admin/presence_table.html')
-
-    # Redirect monitor to their UI
-    if request.user.groups.filter(name='monitor').exists():
-        return redirect('presence-record')
-
-    # Fallback for any other case
-    return redirect('login')
-
+#Students
 @admin_required
 @login_required
 def admin_page(request):
-    students = Student.objects.filter(is_archived=False)  # 🟢 Show only active
+    students = Student.objects.all()  # ✅ Show all active students (no is_archived check needed)
     return render(request, 'users/Admin/admin_page.html', {
         'students': students,
         'department_course_map': settings.DEPARTMENT_COURSE_MAP
     })
-
-@monitor_or_admin_required
-@login_required
-def presence_record(request):
-    return render(request, 'users/Admin/presence_record.html')
 
 @admin_required
 def filter_students(request):
     department = request.GET.get('department', '')
     course = request.GET.get('course', '')
 
-    students = Student.objects.filter(is_archived=False)  # 👈 exclude archived by default
+    students = Student.objects.all()  # ✅ No is_archived filter
 
     if department:
         students = students.filter(department=department)
@@ -501,10 +687,65 @@ def filter_students(request):
             'email': student.email,
             'course': student.course,
             'photo_url': student.photo.url if student.photo else '',
-            'is_archived': student.is_archived,  # optional but useful
         })
 
     return JsonResponse(data, safe=False)
+
+# ----------------------------
+# Archive a Student
+# ----------------------------
+@admin_required
+@require_POST
+def archive_student(request, pk):
+    try:
+        student = Student.objects.get(id=pk)
+        
+        # Create snapshot in ArchivedStudent
+        ArchivedStudent.objects.create(
+            student_id=student.student_id,
+            first_name=student.first_name,
+            last_name=student.last_name,
+            email=student.email,
+            department=student.department,
+            course=student.course,
+            password=student.password,
+            photo=student.photo
+        )
+        
+        # ✅ No need to mark student as archived
+        return JsonResponse({'status': 'success', 'message': 'Student archived.'})
+    except Student.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Student not found.'})
+
+# ----------------------------
+# Retrieve a Student from Archive
+# ----------------------------
+@admin_required
+@require_POST
+def retrieve_student(request, archived_id):
+    try:
+        archived = ArchivedStudent.objects.get(id=archived_id)
+        
+        # Restore to Student table
+        Student.objects.update_or_create(
+            student_id=archived.student_id,
+            defaults={
+                'first_name': archived.first_name,
+                'last_name': archived.last_name,
+                'email': archived.email,
+                'department': archived.department,
+                'course': archived.course,
+                'password': archived.password,
+                'photo': archived.photo,
+            }
+        )
+        
+        # Remove from ArchivedStudent table
+        archived.delete()
+
+        return JsonResponse({'status': 'success', 'message': 'Student retrieved.'})
+    except ArchivedStudent.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Archived student not found.'})
 
 @admin_required
 def get_courses_by_department(request):
@@ -520,52 +761,88 @@ def upload_student_photo(request, id):
     except Student.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Student not found'}, status=404)
 
-    data = json.loads(request.body)
-    image_data = data.get('image_data')
-    if not image_data:
-        return JsonResponse({'status': 'error', 'message': 'No image data received'}, status=400)
+    # Decode JSON
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
 
-    format, imgstr = image_data.split(';base64,')
-    ext = format.split('/')[-1]
-    image = ContentFile(base64.b64decode(imgstr), name=f'student_{student.id}.{ext}')
-    student.photo = image
-    student.save()
+    images = data.get('images', [])
+    if not images or len(images) != 5:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Expected 5 images (left, right, extra1, extra2, front)'
+        }, status=400)
 
-    regenerate_encodings()  # 👈 automatically update encodings
+    try:
+        saved_files = []
+        labels = ["left", "right", "extra1", "extra2", "front"]  # match JS order
 
-    return JsonResponse({
-        'status': 'success',
-        'new_photo_url': request.build_absolute_uri(student.photo.url)
-    })
+        # Ensure student_photos directory exists
+        student_dir = os.path.join(settings.MEDIA_ROOT, "student_photos")
+        os.makedirs(student_dir, exist_ok=True)
 
+        for idx, image_data in enumerate(images):
+            format, imgstr = image_data.split(';base64,')
+            ext = format.split('/')[-1]
+            file_name = f"student_{student.id}_{labels[idx]}.{ext}"
+            file_path = os.path.join(student_dir, file_name)
+
+            # Save image locally
+            with open(file_path, "wb") as f:
+                f.write(base64.b64decode(imgstr))
+            saved_files.append(file_name)
+
+            # Use the FRONT image as student.photo
+            if labels[idx] == "front":
+                student.photo.name = f"student_photos/{file_name}"
+
+        student.save()
+
+        # Regenerate encodings (optional)
+        try:
+            regenerate_encodings()
+        except Exception as e:
+            print(f"Warning: Failed to regenerate encodings: {e}")
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'All 5 photos saved successfully',
+            'files': saved_files
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Failed to save images: {str(e)}'}, status=400)
+
+# -------------------------
 # API Endpoints
+# -------------------------
 @monitor_or_admin_required
 def get_presence_logs(request):
-    # Use localtime to get today in your timezone
     today = localtime(now()).date()
-
-    # Use range filtering with start and end of day in localtime
     start_of_day = localtime(now()).replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = localtime(now()).replace(hour=23, minute=59, second=59, microsecond=999999)
 
     logs = (
         PresenceLog.objects.select_related('student')
         .filter(logs_timestamp__gte=start_of_day, logs_timestamp__lte=end_of_day)
-        .exclude(student__is_archived=True)
         .order_by('-logs_timestamp')
     )
 
     data = []
     for log in logs:
-        timestamp = localtime(log.logs_timestamp)  # convert each log to localtime
+        timestamp = localtime(log.logs_timestamp)
+        formatted_ts = timestamp.strftime("%B %d, %Y - %I:%M %p")
+
         if log.student:
             data.append({
                 'student_id': log.student.student_id,
                 'name': f"{log.student.first_name} {log.student.last_name}",
-                'date': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                'logs_timestamp': formatted_ts,
                 'role': log.role,
-                'department': log.student.department,
+                'department': log.student.department,  # ✅ from Student
                 'purpose': log.purpose,
+                'edited': log.edited,
                 'id': log.id,
                 'snapshot': None,
             })
@@ -573,63 +850,69 @@ def get_presence_logs(request):
             data.append({
                 'student_id': "Guest",
                 'name': "Anonymous Visitor",
-                'date': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                'logs_timestamp': formatted_ts,
                 'role': log.role,
-                'department': log.department or "Unknown",
+                'department': "Unknown",  # ✅ Guests labeled Unknown
                 'purpose': log.purpose,
+                'edited': log.edited,
                 'id': log.id,
-                'snapshot': log.snapshot.url if log.snapshot else None,
+                'snapshot': request.build_absolute_uri(log.snapshot.url) if log.snapshot else None,
             })
 
     return JsonResponse(data, safe=False)
+
 
 @csrf_exempt
 @require_POST
 def log_presence_api(request):
     try:
-        # Support both JSON and multipart/form-data
-        if request.content_type == "application/json":
-            data = json.loads(request.body)
-            student_id = data.get('student_id')
-            role = data.get('role', 'Student')
-            department = data.get('department', 'Unknown')
-            snapshot_file = None  # No snapshot in JSON
-        else:
-            student_id = request.POST.get('student_id')
-            role = request.POST.get('role', 'Student')
-            department = request.POST.get('department', 'Unknown')
-            snapshot_file = request.FILES.get('snapshot')
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        role = data.get('role', 'Student')
+        snapshot_path = data.get('snapshot')
 
-        print(f"📥 Incoming Log: student_id={student_id}, role={role}, department={department}, file={snapshot_file}")
+        print(f"📥 Incoming Log: student_id={student_id}, role={role}, snapshot={snapshot_path}")
 
         if student_id:
-            # Student presence logging
+            # ✅ Student log
             student = Student.objects.get(student_id=student_id)
             today = now().date()
-            already_logged = PresenceLog.objects.filter(student=student, logs_timestamp__date=today).exists()
+            already_logged = PresenceLog.objects.filter(
+                student=student,
+                logs_timestamp__date=today
+            ).exists()
+
             if already_logged:
                 return JsonResponse({'status': 'exists', 'message': 'Already logged today'})
 
             PresenceLog.objects.create(
                 student=student,
                 role=role,
-                department=student.department,
-                purpose="class",
+                purpose="class",  # ✅ default purpose for students
                 logs_timestamp=now()
             )
         else:
-            # Guest presence logging
+            # ✅ Guest log
             log = PresenceLog(
                 student=None,
                 role="Guest",
-                department=department,
-                purpose="visit",
+                purpose="visit",  # ✅ default purpose for guests
                 logs_timestamp=now()
             )
 
-            if snapshot_file:
-                filename = snapshot_file.name
-                log.snapshot.save(filename, snapshot_file, save=False)
+            if snapshot_path:
+                full_path = os.path.join(settings.MEDIA_ROOT, snapshot_path).replace("\\", "/")
+                if os.path.exists(full_path):
+                    try:
+                        with open(full_path, 'rb') as f:
+                            filename = os.path.basename(snapshot_path)
+                            log.snapshot.save(filename, File(f), save=False)
+
+                        # cleanup raw snapshot
+                        os.remove(full_path)
+                        print(f"🧹 Removed raw snapshot: {full_path}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to save or delete snapshot: {e}")
 
             log.save()
 
@@ -639,35 +922,73 @@ def log_presence_api(request):
         print(f"❌ Exception during presence logging: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)})
 
+
 def get_student_info(request, pk):
     try:
         student = Student.objects.get(pk=pk)
         return JsonResponse({
             "name": f"{student.first_name} {student.last_name}",
             "student_id": student.student_id,
-            "department": student.department
+            "department": student.department,  # ✅ pulled directly
         })
     except Student.DoesNotExist:
         return JsonResponse({"error": "Student not found"}, status=404)
 
+from django.http import JsonResponse
+from django.utils.timezone import localtime
+from .models import PresenceLog, ArchivedPresenceLog, Student
 
 def student_logs_api(request):
+    # Get student from session
     student_id = request.session.get("student_id")
     if not student_id:
-        return JsonResponse([], safe=False)
+        return JsonResponse({"error": "Not logged in"}, status=403)
 
-    logs = PresenceLog.objects.filter(student__student_id=student_id).order_by("-date")
-    data = [
+    student = Student.objects.filter(student_id=student_id).first()
+    if not student:
+        return JsonResponse({"error": "Student not found"}, status=404)
+
+    # ------------------------
+    # Active logs (PresenceLog)
+    # ------------------------
+    active_logs = PresenceLog.objects.filter(student=student).order_by("-logs_timestamp")
+
+    active_data = [
         {
             "id": log.id,
-            "date": log.date.strftime("%Y-%m-%dT%H:%M:%S"),
+            "logs_timestamp": localtime(log.logs_timestamp).isoformat(),
+            "logs_timestamp_display": localtime(log.logs_timestamp).strftime("%B %d, %Y - %I:%M %p"),
             "purpose": log.purpose,
-            "role": log.role,
+            "role": "Student",
+            "edited": log.edited,
         }
-        for log in logs
+        for log in active_logs
     ]
-    return JsonResponse(data, safe=False)
 
+    # ------------------------
+    # Archived logs (ArchivedPresenceLog)
+    # ------------------------
+    archived_logs = ArchivedPresenceLog.objects.filter(student_id=student_id).order_by("-logs_timestamp")
+
+    archived_data = [
+        {
+            "id": log.id,
+            "logs_timestamp": localtime(log.logs_timestamp).isoformat(),
+            "logs_timestamp_display": localtime(log.logs_timestamp).strftime("%B %d, %Y - %I:%M %p"),
+            "purpose": log.purpose,
+            "role": "Student",
+            "edited": getattr(log, "edited", False),  # fallback if not in model
+        }
+        for log in archived_logs
+    ]
+
+    # Merge both
+    all_logs = active_data + archived_data
+
+    # Sort descending by timestamp
+    all_logs.sort(key=lambda x: x["logs_timestamp"], reverse=True)
+
+    return JsonResponse(all_logs, safe=False)
 
 @csrf_exempt
 @require_POST
@@ -696,7 +1017,6 @@ def delete_guest_log(request, log_id):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
-
 @csrf_exempt
 @require_POST
 def update_purpose(request, log_id):
@@ -708,20 +1028,24 @@ def update_purpose(request, log_id):
 
         log = PresenceLog.objects.get(id=log_id)
 
-        if log.date.date() != now().date():
-            return JsonResponse({"status": "error", "message": "Only today's logs can be edited."})
+        # ✅ Restrict editing only to today's logs
+        if log.logs_timestamp.date() != now().date():
+            return JsonResponse({"status": "error", "message": "You can only edit your purpose today."})
 
         if log.role == "Student":
             session_id = request.session.get("student_id")
             if session_id != (log.student.student_id if log.student else None):
                 return JsonResponse({"status": "error", "message": "You can only edit your own purpose."})
+
+            # ✅ Restrict to only one edit
             if log.edited:
-                return JsonResponse({"status": "error", "message": "Students can only edit once."})
+                return JsonResponse({"status": "error", "message": "You can only edit your purpose once!"})
+
             if new_purpose not in allowed_student_purposes:
                 return JsonResponse({"status": "error", "message": "Invalid purpose selection."})
 
             log.purpose = new_purpose
-            log.edited = True
+            log.edited = True   # ✅ mark as edited
 
         elif log.role == "Guest":
             if not request.user.is_authenticated or not request.user.is_superuser:
@@ -736,6 +1060,31 @@ def update_purpose(request, log_id):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
+
+#PresenceRecords
+@monitor_or_admin_required
+@login_required
+def presence_record(request):
+    return render(request, 'users/Admin/presence_record.html')
+
+@login_required
+@admin_required
+def presence_table(request):
+    # If student is logged in via session (not Django auth), redirect them to their UI
+    if request.session.get('student_id'):
+        return redirect('home')
+
+    # ✅ Allow admin
+    if request.user.is_superuser:
+        return render(request, 'users/Admin/presence_table.html')
+
+    # Redirect monitor to their UI
+    if request.user.groups.filter(name='monitor').exists():
+        return redirect('presence-record')
+
+    # Fallback for any other case
+    return redirect('login')
+
 # -------------------------
 # PRESENCE LOG LISTING
 # -------------------------
@@ -746,7 +1095,6 @@ def presence_logs_month(request):
     logs = (
         PresenceLog.objects.select_related('student')
         .filter(logs_timestamp__date__lt=today)  # ONLY before today
-        .exclude(student__is_archived=True)
         .order_by('-logs_timestamp')
     )
 
@@ -769,7 +1117,7 @@ def presence_logs_month(request):
         else:
             full_name = "Anonymous Visitor"
             student_id = "Guest"
-            department = log.department or "Unknown"
+            department = "Unknown"
 
         data.append({
             'id': log.id,
@@ -809,7 +1157,7 @@ def archive_log(request, log_id):
         last_name=log.student.last_name if log.student else None,
         logs_timestamp=log.logs_timestamp,
         role=log.role,
-        department=log.student.department if log.student else log.department,
+        department=log.student.department if log.student else "Unknown",   # ✅ fix here
         purpose=log.purpose,
     )
 
@@ -844,7 +1192,7 @@ def bulk_archive_logs(request):
                 last_name=log.student.last_name if log.student else None,
                 logs_timestamp=log.logs_timestamp,
                 role=log.role,
-                department=log.student.department if log.student else log.department,
+                department=log.student.department if log.student else "Unknown",  # ✅ fixed here
                 purpose=log.purpose,
             )
 
@@ -858,66 +1206,300 @@ def bulk_archive_logs(request):
         'message': f'{success_count} records archived. {failed_count} records failed or skipped.'
     })
 
+from generate_encodings import generate_encodings
+# ----------------------------
+# Trigger generate_encodings script
+# ----------------------------
+@login_required
+def run_generate_encodings(request):
+    """
+    Trigger the encoding generation and return stats for frontend badge.
+    Returns JSON with added encodings, total students, and pending images.
+    """
+    try:
+        added, total = generate_encodings()
 
-# -------------------------
-# ARCHIVED LOG LISTING
-# -------------------------
-@admin_required
-def archived_logs(request):
-    archived_logs = ArchivedPresenceLog.objects.order_by('-archived_at')
-    return render(request, 'users/Admin/archived_logs.html', {
-        'archived_logs': archived_logs
-    })
-
-@monitor_or_admin_required
-def get_archived_logs(request):
-    logs = ArchivedPresenceLog.objects.order_by('-archived_at')
-    data = []
-
-    for log in logs:
-        data.append({
-            'student_id': log.student_id or 'Guest',
-            'name': f"{log.first_name} {log.last_name}".strip() or 'Anonymous Visitor',
-            'date': log.logs_timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.logs_timestamp else '',
-            'role': log.role or '',
-            'department': log.department or "Unknown",
-            'purpose': log.purpose or '',
-            'archived_at': log.archived_at.strftime('%Y-%m-%d %H:%M:%S'),
+        # Compute pending count after generation
+        pending_count = _compute_pending_count()
+        
+        return JsonResponse({
+            "status": "success",
+            "message": f"Encodings updated. Added {added}, total {total} students.",
+            "pending_count": pending_count
         })
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-    return JsonResponse(data, safe=False)
 
-@admin_required
-def archived_students(request):
-    archived_students = Student.objects.filter(is_archived=True)
-    return render(request, 'users/Admin/archived_students.html', {
-        'archived_students': archived_students
-    })
-
-@admin_required
-@require_POST
-def archive_student(request, pk):
-    try:
-        student = Student.objects.get(id=pk)
-        student.is_archived = True
-        student.save()
-        return JsonResponse({'status': 'success', 'message': 'Student archived.'})
-    except Student.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Student not found.'})
-
-@admin_required
-@require_POST
-def retrieve_student(request, pk):
-    try:
-        student = Student.objects.get(id=pk, is_archived=True)
-        student.is_archived = False
-        student.save()
-        return JsonResponse({'status': 'success', 'message': 'Student retrieved.'})
-    except Student.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Archived student not found.'})
-
+# ----------------------------
+# Serve the encodings.pkl file
+# ----------------------------
+@login_required
 def serve_encodings(request):
-    enc_path = os.path.join(settings.BASE_DIR, "encodings.pkl")
+    """
+    Serve encodings.pkl as a binary file.
+    """
+    enc_path = os.path.join(settings.MEDIA_ROOT, "encodings.pkl")
     if os.path.exists(enc_path):
         return FileResponse(open(enc_path, 'rb'), content_type='application/octet-stream')
     return JsonResponse({'error': 'Encodings file not found'}, status=404)
+
+
+# ----------------------------
+# Check for pending encodings
+# ----------------------------
+@login_required
+def check_pending_encodings(request):
+    """
+    Count students who still have < 10 images (permanent + snapshots).
+    Returns pending_count and list of pending student PKs.
+    """
+    pending_ids = _compute_pending_ids()
+    return JsonResponse({
+        "pending_count": len(pending_ids),
+        "pending_ids": pending_ids
+    })
+
+
+# ----------------------------
+# Internal helpers
+# ----------------------------
+def _compute_pending_ids():
+    """
+    Helper: returns list of student PKs with < 10 total images.
+    Counts both permanent photos and snapshots.
+    """
+    photo_dir = os.path.join(settings.MEDIA_ROOT, "student_photos")
+    snapshot_dir = os.path.join(settings.MEDIA_ROOT, "student_snapshots")
+    enc_file = os.path.join(settings.MEDIA_ROOT, "encodings.pkl")
+
+    total_count = defaultdict(int)  # {pk: total_images_count}
+
+    # Count existing encodings
+    if os.path.exists(enc_file):
+        with open(enc_file, "rb") as f:
+            data = pickle.load(f)
+            for meta in data.get("metadata", []):
+                pk = meta.get("pk")
+                if pk is not None:
+                    total_count[pk] += 1
+
+    # Count snapshots
+    if os.path.exists(snapshot_dir):
+        for filename in os.listdir(snapshot_dir):
+            if not filename.lower().endswith((".jpg", ".jpeg", ".png")):
+                continue
+            parts = filename.split("_")
+            if len(parts) < 3 or parts[0] != "student":
+                continue
+            try:
+                pk = int(parts[1])
+                total_count[pk] += 1
+            except ValueError:
+                continue
+
+    # Identify pending students based on permanent photos
+    pending_ids = []
+    if os.path.exists(photo_dir):
+        for filename in os.listdir(photo_dir):
+            if not filename.lower().endswith((".jpg", ".jpeg", ".png")):
+                continue
+            try:
+                pk = int(filename.split("_")[1].split(".")[0])
+            except (IndexError, ValueError):
+                continue
+            if total_count[pk] < 10:
+                pending_ids.append(pk)
+
+    return pending_ids
+
+
+def _compute_pending_count():
+    """Helper: returns count of students pending new images."""
+    return len(_compute_pending_ids())
+
+import subprocess
+from django.http import JsonResponse
+import sys
+
+face_recognition_process = None
+
+def start_face_recognition(request):
+    global face_recognition_process
+    if face_recognition_process is None:
+        # Get project root (one level up from students/)
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        script_path = os.path.join(base_dir, "live_face_recognition.py")
+        python_exe = sys.executable  # ensures it runs with your Django venv Python
+
+        face_recognition_process = subprocess.Popen(
+            [python_exe, script_path],
+            cwd=base_dir,  # run from project root
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+        return JsonResponse({"message": f"✅ Face recognition started (PID {face_recognition_process.pid})"})
+    return JsonResponse({"message": "⚠️ Already running"})
+
+def stop_face_recognition(request):
+    global face_recognition_process
+    if face_recognition_process:
+        face_recognition_process.terminate()
+        output, _ = face_recognition_process.communicate(timeout=5)
+        print("🔴 Face recognition logs:\n", output.decode())  # debug: see errors in Django terminal
+        face_recognition_process = None
+        return JsonResponse({"message": "🛑 Face recognition stopped"})
+    return JsonResponse({"message": "⚠️ Not running"})
+
+#StudentUI
+def student_logs_percentage(request):
+    student_id = request.session.get("student_id")
+    if not student_id:
+        return JsonResponse({"error": "Not logged in"}, status=403)
+
+    # Resolve student.pk from the custom student_id in session
+    student = Student.objects.filter(student_id=student_id).first()
+    if not student:
+        return JsonResponse({"error": "Student not found"}, status=404)
+
+    # Use timezone-aware datetimes
+    today = timezone.localdate()
+    month_start = timezone.make_aware(datetime.combine(today.replace(day=1), datetime.min.time()))
+    next_month = (month_start + timezone.timedelta(days=32)).replace(day=1)
+
+    # Total days so far in the month
+    total_days = (today - month_start.date()).days + 1  
+
+    # Query presence logs using PK
+    logs = PresenceLog.objects.filter(
+        student_id=student.pk,   # ✅ now using the PK
+        logs_timestamp__gte=month_start,
+        logs_timestamp__lt=next_month
+    ).dates("logs_timestamp", "day")
+
+    attended_days = len(logs)
+    percentage = int((attended_days / total_days) * 100) if total_days > 0 else 0
+
+    # Debug prints
+    print("DEBUG student_logs_percentage →")
+    print(" session student_id:", student_id)
+    print(" resolved pk:", student.pk)
+    print(" month_start:", month_start)
+    print(" next_month:", next_month)
+    print(" total_days:", total_days)
+    print(" attended_days:", attended_days)
+    print(" logs:", list(logs))
+
+    return JsonResponse({"percentage": percentage})
+
+#BackupCloud (Guest Only)
+import os
+from datetime import datetime
+from django.http import JsonResponse
+from django.conf import settings
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+
+# ----------------------------
+# Google Drive Folder IDs
+# ----------------------------
+GUEST_FOLDER_ID = "1Fa2ZCYWBI7dR5KtS9Skdkz6V3aPHffXk"  
+
+def get_or_create_drive_folder(drive, parent_id, folder_name):
+    """Find existing folder or create a new one under parent_id."""
+    query = (
+        f"'{parent_id}' in parents and trashed=false "
+        f"and title='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
+    )
+    file_list = drive.ListFile({'q': query}).GetList()
+    if file_list:
+        return file_list[0]['id']
+    folder = drive.CreateFile({
+        'title': folder_name,
+        'mimeType': 'application/vnd.google-apps.folder',
+        'parents': [{'id': parent_id}]
+    })
+    folder.Upload()
+    return folder['id']
+
+def authenticate_drive():
+    """Handles Google Drive authentication with token.json."""
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    token_path = os.path.join(PROJECT_ROOT, "token.json")
+
+    gauth = GoogleAuth()
+    gauth.LoadCredentialsFile(token_path)
+    if gauth.access_token_expired:
+        gauth.Refresh()
+    else:
+        gauth.Authorize()
+    return GoogleDrive(gauth)
+
+# ----------------------------
+# BACKUP GUEST SNAPSHOTS
+# ----------------------------
+def backup_guest_images_to_drive(request):
+    """
+    Upload all guest snapshots to Google Drive (grouped by month).
+    Delete them locally after success.
+    """
+    try:
+        drive = authenticate_drive()
+        uploaded, deleted, errors = [], [], []
+
+        guest_path = os.path.join(settings.MEDIA_ROOT, "guest_snapshots")
+
+        if os.path.exists(guest_path):
+            for filename in os.listdir(guest_path):
+                file_path = os.path.join(guest_path, filename)
+                if os.path.isfile(file_path):
+                    try:
+                        ts = datetime.fromtimestamp(os.path.getmtime(file_path))
+                        month_folder = ts.strftime("%Y-%m")
+
+                        month_folder_id = get_or_create_drive_folder(drive, GUEST_FOLDER_ID, month_folder)
+
+                        gfile = drive.CreateFile({
+                            'title': filename,
+                            'parents': [{'id': month_folder_id}]
+                        })
+                        gfile.SetContentFile(file_path)
+                        gfile.Upload()
+                        uploaded.append(f"guest_snapshots/{month_folder}/{filename}")
+
+                        if hasattr(gfile, "content") and gfile.content:
+                            gfile.content.close()
+                        del gfile
+
+                        os.remove(file_path)
+                        deleted.append(filename)
+
+                    except Exception as inner_e:
+                        errors.append(f"{filename}: {str(inner_e)}")
+
+        return JsonResponse({
+            "status": "success",
+            "uploaded": uploaded,
+            "deleted": deleted,
+            "errors": errors
+        })
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})
+
+@monitor_or_admin_required
+def count_guest_snapshots(request):
+    guest_path = os.path.join(settings.MEDIA_ROOT, "guest_snapshots")
+    count = 0
+    if os.path.exists(guest_path):
+        count = len([
+            f for f in os.listdir(guest_path)
+            if os.path.isfile(os.path.join(guest_path, f))
+        ])
+    return JsonResponse({"count": count})
+
+
+from django.shortcuts import render
+
+def test_camera(request):
+    return render(request, "users/Interface/test_camera.html")

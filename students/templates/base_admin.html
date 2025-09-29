@@ -73,93 +73,60 @@
 </head>
 <body class="d-flex">
 
-  <!-- Sidebar -->
-  <nav id="sidebar" class="bg-dark text-white p-3 vh-100">
-    {% block sidebar %}
+<!-- Sidebar -->
+<nav id="sidebar" class="bg-dark text-white p-3 vh-100">
+  {% block sidebar %}
 
-    <!-- Branding -->
-    <div class="text-center mb-4">
-      <div class="position-relative d-inline-block">
-        <i class="bi bi-person-circle text-light fs-1"></i>
-        <i class="bi bi-shield-lock-fill text-warning position-absolute bottom-0 end-0" style="font-size: 0.8rem;"></i>
-      </div>
-      <h5 class="fw-bold mb-0">Student Tracker Admin</h5>
-      <small class="text-muted">Control Panel</small>
+  <!-- Branding -->
+  <div class="text-center mb-4">
+    <div class="position-relative d-inline-block">
+      <i class="bi bi-person-circle text-light fs-1"></i>
+      <i class="bi bi-shield-lock-fill text-warning position-absolute bottom-0 end-0" style="font-size: 0.8rem;"></i>
     </div>
+    <h5 class="fw-bold mb-0">Student Tracker Admin</h5>
+    <small class="text-muted">Control Panel</small>
+  </div>
 
-    <!-- Info -->
-    <div class="mb-4 small text-white-50">
-      Use the navigation to manage presence, student records, logs, and archives.
-    </div>
+  <!-- Info -->
+  <div class="mb-4 small text-white-50">
+    Use the navigation to manage presence, student records, logs, and analysis.
+  </div>
 
-    <!-- Sidebar Menu -->
-    <ul class="nav flex-column">
+  <!-- Sidebar Menu -->
+  <ul class="nav flex-column">
 
-      <!-- Management -->
-      <li class="nav-item mb-2">
-        <div class="text-uppercase fw-bold small text-white-50 ps-2">Management</div>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_table' %}active{% endif %}" href="{% url 'presence_table' %}">
-          <i class="bi bi-clock-history me-2"></i> Presence Records
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if request.resolver_match.url_name == 'student_records' %}active{% endif %}" href="{% url 'student_records' %}">
-          <i class="bi bi-person-lines-fill me-2"></i> Student Records
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_logs_month' %}active{% endif %}" href="{% url 'presence_logs_month' %}">
-          <i class="bi bi-calendar-event me-2"></i> Monthly Logs
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if request.resolver_match.url_name == 'data_analysis' %}active{% endif %}" href="{% url 'data_analysis' %}">
-          <i class="bi bi-bar-chart-line me-2"></i> Data Analysis
-        </a>
-      </li>
+    <!-- Management Section -->
+    <li class="nav-item mb-2">
+      <div class="text-uppercase fw-bold small text-white-50 ps-2">Management</div>
+    </li>
 
-      <!-- Archived -->
-      <li class="nav-item mt-3">
-        <div class="text-uppercase fw-bold small text-white-50 ps-2">Archived</div>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white d-flex justify-content-between align-items-center
-          {% if request.resolver_match.url_name in 'archived_logs archived_students archived_analysis' %}active{% endif %}"
-          data-bs-toggle="collapse"
-          href="#archivedCollapse"
-          role="button"
-          aria-expanded="{% if request.resolver_match.url_name in 'archived_logs archived_students archived_analysis' %}true{% else %}false{% endif %}"
-          aria-controls="archivedCollapse">
-          <span><i class="bi bi-archive me-2"></i> Archived Records</span>
-          <i class="bi bi-caret-down-fill"></i>
-        </a>
+    <li class="nav-item">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_table' %}active{% endif %}" href="{% url 'presence_table' %}">
+        <i class="bi bi-clock-history me-2"></i> Presence Records
+      </a>
+    </li>
 
-        <div class="collapse {% if request.resolver_match.url_name in 'archived_logs archived_students archived_analysis' %}show{% endif %}" id="archivedCollapse">
-          <ul class="nav flex-column ps-4 mt-1">
-            <li class="nav-item">
-              <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_students' %}active{% endif %}" href="{% url 'archived_students' %}">
-                <i class="bi bi-people me-2"></i> Archived Students
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_logs' %}active{% endif %}" href="{% url 'archived_logs' %}">
-                <i class="bi bi-journal-text me-2"></i> Archived Logs
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white {% if request.resolver_match.url_name == 'archived_analysis' %}active{% endif %}" href="{% url 'archived_analysis' %}">
-                <i class="bi bi-bar-chart me-2"></i> Archived Analysis
-              </a>
-            </li>
-          </ul>
-        </div>
-        
-      </li>
-    </ul>
-    {% endblock %}
-  </nav>
+    <li class="nav-item">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'student_records' %}active{% endif %}" href="{% url 'student_records' %}">
+        <i class="bi bi-person-lines-fill me-2"></i> Student Records
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'presence_logs_month' %}active{% endif %}" href="{% url 'presence_logs_month' %}">
+        <i class="bi bi-calendar-event me-2"></i> Monthly Logs
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link text-white {% if request.resolver_match.url_name == 'data_analysis' %}active{% endif %}" href="{% url 'data_analysis' %}">
+        <i class="bi bi-bar-chart-line me-2"></i> Data Analysis
+      </a>
+    </li>
+
+  </ul>
+  {% endblock %}
+</nav>
 
   <!-- Page Content -->
   <div class="flex-grow-1 d-flex flex-column">
@@ -167,7 +134,7 @@
     <header class="d-flex align-items-center justify-content-between bg-light border-bottom p-3">
   <!-- Left Side -->
   <h5 class="mb-0 d-flex align-items-center">
-    <i class="bi bi-speedometer2 me-2 text-primary"></i> Admin Dashboard
+     Admin Dashboard
   </h5>
 
   <!-- Right Side: User Dropdown with Icon -->
@@ -207,7 +174,7 @@
       <!-- Header -->
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title fw-bold" id="settingsModalLabel">
-          <i class="bi bi-gear me-2"></i> Admin Settings
+          <i class="bi bi-gear me-2"></i>Settings
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -226,11 +193,7 @@
               <i class="bi bi-shield-lock me-1"></i> Security
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="preferences-tab" data-bs-toggle="tab" data-bs-target="#preferences" type="button" role="tab">
-              <i class="bi bi-sliders me-1"></i> Preferences
-            </button>
-          </li>
+          
         </ul>
 
         <!-- Tabs Content -->
@@ -240,7 +203,7 @@
           <div class="tab-pane fade show active" id="profile" role="tabpanel">
             <div class="card border-0 shadow-sm mb-3">
               <div class="card-body">
-                <h6 class="fw-bold text-primary mb-3">Profile Information</h6>
+                <h6 class="fw-bold text-secondary mb-3">Profile Information</h6>
                 <div class="row g-3">
                   <div class="col-md-6">
                     <label for="adminName" class="form-label"><i class="bi bi-person-fill me-1"></i> Full Name</label>
@@ -259,7 +222,7 @@
           <div class="tab-pane fade" id="security" role="tabpanel">
             <div class="card border-0 shadow-sm mb-3">
               <div class="card-body">
-                <h6 class="fw-bold text-primary mb-3">Security Settings</h6>
+                <h6 class="fw-bold text-secondary mb-3">Security</h6>
                 <div class="row g-3">
   <!-- New Password -->
   <div class="col-md-6">
@@ -288,34 +251,6 @@
   </div>
 </div>
 
-              </div>
-            </div>
-          </div>
-
-          <!-- Preferences Tab -->
-          <div class="tab-pane fade" id="preferences" role="tabpanel">
-            <div class="card border-0 shadow-sm mb-3">
-              <div class="card-body">
-                <h6 class="fw-bold text-primary mb-3">Preferences</h6>
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label for="themeSelect" class="form-label"><i class="bi bi-palette-fill me-1"></i> Theme</label>
-                    <select class="form-select" id="themeSelect">
-                      <option selected>Light</option>
-                      <option>Dark</option>
-                      <option>Auto</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="languageSelect" class="form-label"><i class="bi bi-translate me-1"></i> Language</label>
-                    <select class="form-select" id="languageSelect">
-                      <option selected>English</option>
-                      <option>Spanish</option>
-                      <option>French</option>
-                      <option>Chinese</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -390,13 +325,6 @@
             activeLink.scrollIntoView({ behavior: "smooth", block: "center" });
           }
         }, 150);
-      });
-    });
-
-    // FIX: prevent collapse toggle blocking child links
-    document.querySelectorAll("#archivedCollapse a.nav-link").forEach(childLink => {
-      childLink.addEventListener("click", function (e) {
-        e.stopPropagation(); // prevent parent collapse toggle
       });
     });
   </script>

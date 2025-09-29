@@ -1,9 +1,12 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
+    path('admin-login/', views.admin_login_view, name='admin_login'),
     path('logout/', views.logout_view, name='logout'),
 
     # Student Registration and OTP
@@ -30,17 +33,14 @@ urlpatterns = [
     path('data_analysis/', views.data_analysis, name='data_analysis'),
     path('presence_table/', views.presence_table, name='presence_table'),
     path('presence_logs/month/', views.presence_logs_month, name='presence_logs_month'),
-    path('archived-logs/', views.archived_logs, name='archived_logs'),
-    path('get-archived-logs/', views.get_archived_logs, name='get_archived_logs'),
     path('api/student_logs/', views.student_logs_api, name='student_logs_api'),
-    path('archived-students/', views.archived_students, name='archived_students'),
     path('encodings.pkl', views.serve_encodings, name='serve_encodings'),
-    path('archived-analysis/', views.archived_analysis_view, name='archived_analysis'),
 
     # ✅ NEW: Presence log API for frontend
     path('get-presence-logs/', views.get_presence_logs, name='get_presence_logs'),
     path('api/log_presence/', views.log_presence_api, name='log_presence_api'),
     path('api/student_info/<int:pk>/', views.get_student_info, name='get_student_info'),    
+    path("student/logs-percentage/", views.student_logs_percentage, name="student_logs_percentage"),
 
     #action
     path('delete-guest-log/<int:log_id>/', views.delete_guest_log, name='delete_guest_log'),
@@ -49,6 +49,12 @@ urlpatterns = [
     path('retrieve-student/<int:pk>/', views.retrieve_student, name='retrieve_student'),
     path('archive-log/<int:log_id>/', views.archive_log, name='archive_log'),
     path('bulk-archive-logs/', views.bulk_archive_logs, name='bulk_archive_logs'),
-
-]
+    path("start_face_recognition/", views.start_face_recognition, name="start_face_recognition"),
+    path("stop_face_recognition/", views.stop_face_recognition, name="stop_face_recognition"),
+    path("check-pending-encodings/", views.check_pending_encodings, name="check_pending_encodings"),
+    path("run-generate-encodings/", views.run_generate_encodings, name="run_generate_encodings"),
+    path("backup-images/", views.backup_guest_images_to_drive, name="backup_images"),
+    path("count-guest-snapshots/", views.count_guest_snapshots, name="count_guest_snapshots"),
+    path("test-camera/", views.test_camera, name="test_camera"),
+] 
 

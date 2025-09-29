@@ -22,7 +22,7 @@ def archive_last_month_logs():
     archived_batch = [
         ArchivedPresenceLog(
             student=log.student,
-            date=log.date,
+            logs_timestamp=log.logs_timestamp,
             role=log.role,
             department=log.department,
             purpose=log.purpose,

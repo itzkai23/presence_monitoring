@@ -1,93 +1,130 @@
 {% load static %}
-{% load tz %}  {# For timezone-aware 'now' #}
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Presence record</title>
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'styles/presence_table.css' %}">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-{% endblock %}
+  <title>Presence Record</title>
 
-<style>
-  .custom-dropdown-hidden {
-    display: none !important;
-  }
-</style>
+  {% block extra_css %}
+    <link rel="stylesheet" href="{% static 'styles/presence_table.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  {% endblock %}
 
+  <style>
+    .custom-dropdown-hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 
-<header class="d-flex align-items-center justify-content-between bg-dark border-bottom shadow-sm px-4" style="height: 64px;">
-  <!-- Left section: Page Title -->
-  <div class="d-flex align-items-center gap-2">
-    <h5 class="mb-0 fw-semibold text-light">Presence Monitoring</h5>
-  </div>
-
-  <!-- Right section: Custom Profile Dropdown -->
-  <div class="position-relative" id="customProfileDropdown">
-    <button class="btn d-flex align-items-center gap-2 border-0 bg-dark" id="profileToggleBtn" type="button">
-      <i class="bi bi-person-workspace fs-4 text-light"></i>
-      <span class="d-none d-md-inline text-light">
-        {{ request.user.get_full_name|default:request.user.username }}
-      </span>
-      <i class="bi bi-caret-down-fill text-light"></i>
-    </button>
-
-    <div id="dropdownMenu" class="position-absolute end-0 mt-2 py-2 bg-white border rounded shadow-sm custom-dropdown-hidden" style="min-width: 180px; z-index: 999;">
-      <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark text-decoration-none" href="#">
-        <i class="bi bi-gear fs-5"></i> Settings
-      </a>
-      <form action="{% url 'logout' %}" method="post" class="m-0">
-        {% csrf_token %}
-        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-danger fs-6">
-          <i class="bi bi-box-arrow-right fs-5 text-danger"></i>Logout
-        </button>
-      </form>
+<body>
+  <!-- Header -->
+  <header class="d-flex align-items-center justify-content-between bg-dark border-bottom shadow-sm px-4" style="height: 64px;">
+    <div class="d-flex align-items-center gap-2">
+      <h5 class="mb-0 fw-semibold text-light">Presence Monitoring</h5>
     </div>
-  </div>
-</header>
 
-{% block content %}
-<main id="mainContent">
-  <div class="table-container mt-5">
-    <div class="text-center mb-4">
-    <h2 class="fw-bold text-uppercase text-primary-emphasis">
-      <i class="bi bi-calendar-check me-2"></i>Presence Logs
-    </h2>
-    <p class="text-muted fs-6">
-      for <span class="fw-semibold">{% now "F d, Y" %}</span>
-    </p>
-  </div>
+    <div class="position-relative" id="customProfileDropdown">
+      <button class="btn d-flex align-items-center gap-2 border-0 bg-dark" id="profileToggleBtn" type="button">
+        <i class="bi bi-person-workspace fs-4 text-light"></i>
+        <span class="d-none d-md-inline text-light">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </span>
+        <i class="bi bi-caret-down-fill text-light"></i>
+      </button>
 
-    <input type="search" id="searchPresence" class="form-control search-input" placeholder="Search presence records..." />
+      <div id="dropdownMenu"
+           class="position-absolute end-0 mt-2 py-2 bg-white border rounded shadow-sm custom-dropdown-hidden"
+           style="min-width: 180px; z-index: 999;">
+        <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark text-decoration-none" href="#">
+          <i class="bi bi-gear fs-5"></i> Settings
+        </a>
+        <form action="{% url 'logout' %}" method="post" class="m-0">
+          {% csrf_token %}
+          <button type="submit"
+                  class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-danger fs-6">
+            <i class="bi bi-box-arrow-right fs-5 text-danger"></i>Logout
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
 
-    <table class="table table-striped table-hover align-middle mt-3">
-      <thead class="table-dark">
-        <tr>
-          <th>Student ID</th>
-          <th>Name</th>
-          <th>Date</th>
-          <th>Role</th>
-          <th>Department</th>
-          <th>Purpose</th>
-          <th>Snapshot</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="presenceTableBody">
-        <!-- Records will be dynamically injected by JS -->
-      </tbody>
-    </table>
-  </div>
-</main>
-{% endblock %}
+  <!-- Main -->
+  <main id="mainContent" class="px-3 mt-4">
+    <!-- Table Section -->
+    <div class="table-container">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold text-uppercase text-primary-emphasis">
+          <i class="bi bi-calendar-check me-2"></i>Presence Logs
+        </h2>
+        <p class="text-muted fs-6">
+          for <span class="fw-semibold">{% now "F d, Y" %}</span>
+        </p>
+      </div>
+      
+       <!-- Controls Row -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <button id="backup-btn" class="btn btn-primary w-100">
+            Backup Guest Snapshots
+            <span id="snapshot-count" class="badge bg-light text-dark ms-2">0</span>
+          </button>
+        </div>
 
+        <div>
+          <button id="startBtn" class="btn btn-success">Start Recognition</button>
+          <button id="stopBtn" class="btn btn-danger">Stop Recognition</button>
+        </div>    
+    </div>
+    <p id="status" class="text-center text-muted mt-2">Idle...</p>
+
+      <!-- Search Input -->
+      <div class="col-md-6 position-relative mb-3">
+        <input 
+          type="text" 
+          id="searchPresence" 
+          class="form-control rounded pe-5" 
+          placeholder="Search presence logs..."
+        >
+        <button 
+          class="btn position-absolute end-0 top-0 bottom-0 me-0" 
+          id="clearSearch" 
+          type="button" 
+          style="border: none; background: transparent; display: none;"
+        >
+          <i class="bi bi-x-circle-fill text-secondary"></i>
+        </button>
+      </div>
+
+      <!-- Table -->
+      <table class="table table-striped table-hover align-middle mt-3">
+        <thead class="table-dark">
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Purpose</th>
+            <th>Snapshot</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="presenceTableBody">
+          <!-- Records will be dynamically injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+  
 {% block extra_js %}
 <script src="{% static 'scripts/presence_table.js' %}"></script>
 <script>
+  // Profile dropdown
   document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("profileToggleBtn");
     const dropdownMenu = document.getElementById("dropdownMenu");
@@ -104,8 +141,115 @@
       }
     });
   });
-</script>
 
+  // Search input logic
+  const searchInput = document.getElementById("searchPresence");
+  const clearBtn = document.getElementById("clearSearch");
+
+  searchInput.addEventListener("input", () => {
+    clearBtn.style.display = searchInput.value ? "block" : "none";
+  });
+
+  clearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    clearBtn.style.display = "none";
+    searchInput.focus();
+  });
+
+  // Shared button loading utility
+  function setLoading(btn, isLoading, loadingText = "Loading...") {
+    if (isLoading) {
+      if (!btn.dataset.originalText) btn.dataset.originalText = btn.innerHTML.trim();
+      btn.disabled = true;
+      btn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        ${loadingText}
+      `;
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+      delete btn.dataset.originalText;
+    }
+  }
+
+  function fetchWithMinDelay(url, btn, statusEl, minDelay = 500) {
+    setLoading(btn, true);
+    statusEl.innerText = url.includes("start") ? "⏳ Starting recognition..." : "⏳ Stopping recognition...";
+    const startTime = Date.now();
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const elapsed = Date.now() - startTime;
+        const remaining = minDelay - elapsed;
+        setTimeout(() => {
+          statusEl.innerText = data.message;
+          setLoading(btn, false);
+        }, remaining > 0 ? remaining : 0);
+      })
+      .catch(() => {
+        statusEl.innerText = "❌ Operation failed.";
+        setLoading(btn, false);
+      });
+  }
+
+  // Face recognition buttons
+  const statusEl = document.getElementById("status");
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+
+  startBtn.addEventListener("click", () => fetchWithMinDelay("/start_face_recognition/", startBtn, statusEl));
+  stopBtn.addEventListener("click", () => fetchWithMinDelay("/stop_face_recognition/", stopBtn, statusEl));
+
+  // Backup button
+  const backupBtn = document.getElementById("backup-btn");
+  backupBtn.addEventListener("click", () => {
+    if (!confirm("Are you sure you want to backup all guest snapshots to Google Drive?")) return;
+
+    setLoading(backupBtn, true, "Backing up...");
+    const startTime = Date.now();
+
+    fetch("/backup-images/", { method: "GET" })
+      .then(response => response.json())
+      .then(data => {
+        const elapsed = Date.now() - startTime;
+        const remaining = 500 - elapsed;
+        setTimeout(() => {
+          if (data.status === "success") {
+            let msg = `✅ Backup complete!\n\nUploaded: ${data.uploaded.length}\nDeleted locally: ${data.deleted.length}`;
+            if (data.errors && data.errors.length > 0) {
+              msg += `\n\n⚠️ Errors:\n${data.errors.join("\n")}`;
+            }
+            alert(msg);
+          } else {
+            alert("❌ Error: " + data.message);
+          }
+          setLoading(backupBtn, false);
+        }, remaining > 0 ? remaining : 0);
+      })
+      .catch(error => {
+        alert("❌ Unexpected error: " + error);
+        setLoading(backupBtn, false);
+      });
+  });
+
+  async function updateSnapshotCount() {
+    try {
+      const res = await fetch("/count-guest-snapshots/");
+      const data = await res.json();
+      document.getElementById("snapshot-count").textContent = data.count;
+    } catch (e) {
+      console.error("Failed to fetch snapshot count:", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    updateSnapshotCount();
+    backupBtn.addEventListener("click", () => {
+      setTimeout(updateSnapshotCount, 2000);
+    });
+  });
+</script>
 {% endblock %}
 </body>
 </html>

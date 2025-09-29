@@ -1,6 +1,4 @@
 let currentFilters = { department: '', course: '' };
-let currentStudentId = null;
-let videoStream = null;
 
 function toggleList(id) {
   const element = document.getElementById(id);
@@ -162,31 +160,143 @@ function toggleNestedList(element) {
   }
 }
 
-function openCameraModal(studentId) {
-  currentStudentId = studentId;
-  const modal = document.getElementById("cameraModal");
-  modal.style.display = "flex";
+// =============================
+// Student Camera Capture Logic
+// =============================
+let captureStep = 0;
+let capturedImages = [];
 
-  document.getElementById("previewImage").style.display = "none";
-  document.getElementById("cameraStream").style.display = "block";
+// Capture prompts for steps
+const capturePrompts = [
+  "📸 Capture LEFT side (3/4 angle).",
+  "📸 Capture RIGHT side (3/4 angle).",
+  "📸 Capture EXTRA POSE 1 (any angle).",
+  "📸 Capture EXTRA POSE 2 (any angle).",
+  "📸 Capture FRONT (straight ahead)."
+];
 
+// Inline face overlays
+const faceOverlays = {
+  0: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+        <ellipse cx="70" cy="80" rx="40" ry="55" stroke="cyan" stroke-width="3" fill="none"/>
+        <circle cx="55" cy="65" r="6" fill="cyan"/>
+      </svg>`,
+  1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+        <ellipse cx="50" cy="80" rx="40" ry="55" stroke="cyan" stroke-width="3" fill="none"/>
+        <circle cx="65" cy="65" r="6" fill="cyan"/>
+      </svg>`,
+  2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+        <ellipse cx="60" cy="80" rx="40" ry="55" stroke="cyan" stroke-width="3" fill="none"/>
+      </svg>`,
+  3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+        <ellipse cx="60" cy="80" rx="40" ry="55" stroke="cyan" stroke-width="3" fill="none"/>
+      </svg>`,
+  4: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+        <ellipse cx="60" cy="80" rx="40" ry="55" stroke="cyan" stroke-width="3" fill="none"/>
+        <circle cx="45" cy="65" r="6" fill="cyan"/>
+        <circle cx="75" cy="65" r="6" fill="cyan"/>
+      </svg>`
+};
+
+// Track per-student progress
+const studentCaptureProgress = {};
+let currentStudentId = null;
+let videoStream = null;
+let selectedDeviceId = null;
+
+// ----------------------------
+// Camera Device Selection
+// ----------------------------
+async function loadCameraDevices() {
+  try {
+    // Request permission once to unlock device labels
+    await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(d => d.kind === "videoinput");
+
+    if (!videoDevices.length) {
+      throw new Error("No video devices found.");
+    }
+
+    // Prefer EMEET (case-insensitive), otherwise first available
+    const emeet = videoDevices.find(d => /emeet/i.test(d.label));
+    if (emeet) {
+      selectedDeviceId = emeet.deviceId;
+      console.log("🎯 EMEET camera selected:", emeet.label);
+    } else {
+      selectedDeviceId = videoDevices[0].deviceId;
+      console.log("⚠️ EMEET not found. Using:", videoDevices[0].label);
+    }
+
+  } catch (err) {
+    console.error("❌ Error loading camera devices:", err.name, err.message);
+    alert("Camera device error: " + err.name + " - " + err.message);
+  }
+}
+
+async function startCamera() {
+  const video = document.getElementById("cameraStream");
+  try {
+    // Stop any existing stream before starting new
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());
+      videoStream = null;
+    }
+
+    const constraints = {
+      video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : { facingMode: "user" },
+      audio: false
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoStream = stream;
+
+    // Safer attributes for autoplay
+    video.setAttribute("playsinline", true);
+    video.setAttribute("autoplay", true);
+    video.setAttribute("muted", true);
+
+    video.srcObject = stream;
+    await video.play();
+    console.log("✅ Camera started:", stream);
+  } catch (err) {
+    console.error("❌ Camera error:", err.name, err.message);
+    alert("Camera error: " + err.name + " - " + err.message);
+    closeCameraModal();
+  }
+}
+
+function restartCamera() {
+  if (videoStream) {
+    videoStream.getTracks().forEach(track => track.stop());
+  }
   startCamera();
 }
 
-function startCamera() {
-  const video = document.getElementById("cameraStream");
+// ----------------------------
+// Camera Modal Handlers
+// ----------------------------
+function openCameraModal(studentId) {
+  currentStudentId = studentId;
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
-    .then((stream) => {
-      videoStream = stream;
-      video.srcObject = stream;
-      video.play();
-    })
-    .catch((err) => {
-      console.error("Camera error:", err);
-      alert("Unable to access camera. Please check your browser permissions.");
-      closeCameraModal();
-    });
+  if (studentCaptureProgress[studentId]) {
+    captureStep = studentCaptureProgress[studentId].step;
+    capturedImages = studentCaptureProgress[studentId].images;
+  } else {
+    captureStep = 0;
+    capturedImages = [];
+  }
+
+  const modal = document.getElementById("cameraModal");
+  modal.style.display = "flex";
+  document.getElementById("previewImage").style.display = "none";
+  document.getElementById("cameraStream").style.display = "block";
+
+  updateCapturePrompt();
+  toggleConfirmButton(false);
+
+  loadCameraDevices().then(() => startCamera());
 }
 
 function capturePhoto() {
@@ -198,49 +308,114 @@ function capturePhoto() {
   canvas.height = video.videoHeight;
   canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  preview.src = canvas.toDataURL("image/jpeg");
+  const dataURL = canvas.toDataURL("image/jpeg");
+  capturedImages[captureStep] = dataURL;
+
+  preview.src = dataURL;
   preview.style.display = "block";
   video.style.display = "none";
+
+  setOverlayText(`✅ Captured (${captureStep + 1}/5)`);
+  updateFaceGuide(true);
+  toggleConfirmButton(true);
 }
 
 function confirmPhoto() {
-  const canvas = document.getElementById("captureCanvas");
-  const dataURL = canvas.toDataURL("image/jpeg");
-
-  if (!dataURL) {
-    alert("No photo captured.");
+  if (!capturedImages[captureStep]) {
+    alert("Please capture a photo first.");
     return;
   }
 
-  fetch(`/upload_student_photo/${currentStudentId}/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken()
-    },
-    body: JSON.stringify({ image_data: dataURL })
-  })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message || "Photo uploaded.");
-      if (data.status === "success") location.reload();
-      closeCameraModal();
+  studentCaptureProgress[currentStudentId] = { step: captureStep, images: capturedImages };
+  captureStep++;
+
+  if (captureStep < 5) {
+    document.getElementById("previewImage").style.display = "none";
+    document.getElementById("cameraStream").style.display = "block";
+
+    updateCapturePrompt();
+    toggleConfirmButton(false);
+    updateFaceGuide(false);
+
+    studentCaptureProgress[currentStudentId].step = captureStep;
+  } else {
+    // All 5 steps captured → upload
+    fetch(`/upload_student_photo/${currentStudentId}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken()
+      },
+      body: JSON.stringify({ images: capturedImages })
     })
-    .catch(() => alert("Failed to upload photo."));
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Photos uploaded.");
+        if (data.status === "success") {
+          delete studentCaptureProgress[currentStudentId];
+          location.reload();
+        }
+        closeCameraModal();
+      })
+      .catch(err => {
+        console.error("❌ Upload failed:", err);
+        alert("Failed to upload photos.");
+      });
+  }
 }
 
 function retakePhoto() {
   document.getElementById("previewImage").style.display = "none";
   document.getElementById("cameraStream").style.display = "block";
+
+  capturedImages[captureStep] = null;
+  updateCapturePrompt();
+  updateFaceGuide(false);
+  toggleConfirmButton(false);
 }
 
 function closeCameraModal() {
   const modal = document.getElementById("cameraModal");
   modal.style.display = "none";
+
   if (videoStream) {
     videoStream.getTracks().forEach(track => track.stop());
     videoStream = null;
   }
+
+  if (currentStudentId) {
+    studentCaptureProgress[currentStudentId] = { step: captureStep, images: capturedImages };
+  }
+}
+
+function toggleConfirmButton(enabled) {
+  const btn = document.querySelector("#cameraModal button.btn-success");
+  if (btn) btn.disabled = !enabled;
+}
+
+// ----------------------------
+// Overlay Helpers
+// ----------------------------
+function updateCapturePrompt() {
+  setOverlayText(capturePrompts[captureStep]);
+  updateFaceDirection(captureStep);
+}
+
+function setOverlayText(text) {
+  const overlay = document.getElementById("cameraOverlay");
+  if (overlay) overlay.innerText = text;
+}
+
+function updateFaceGuide(success = false) {
+  const guide = document.getElementById("faceGuide");
+  if (guide) {
+    guide.style.border = success ? "3px solid rgba(0,255,0,0.8)" : "3px dashed rgba(0,255,255,0.7)";
+  }
+}
+
+function updateFaceDirection(step) {
+  const direction = document.getElementById("faceDirection");
+  if (direction) direction.innerHTML = faceOverlays[step] || "";
 }
 
 function getCSRFToken() {
@@ -249,9 +424,13 @@ function getCSRFToken() {
   return csrf ? csrf.split("=")[1] : "";
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  applyFilters(); // Initial load
-  document.querySelectorAll('.toggle-arrow').forEach(el => {
-    el.addEventListener('click', () => toggleNestedList(el));
+// =============================
+// Existing Page Functions
+// =============================
+document.addEventListener("DOMContentLoaded", () => {
+  applyFilters?.();
+
+  document.querySelectorAll(".toggle-arrow").forEach(el => {
+    el.addEventListener("click", () => toggleNestedList(el));
   });
 });

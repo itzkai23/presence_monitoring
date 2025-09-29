@@ -82,7 +82,16 @@ class StudentRegistrationForm(forms.ModelForm):
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email and not email.endswith('@cityofmalabonuniversity.edu.ph'):
-            raise forms.ValidationError("Please use your university email (@cityofmalabonuniversity.edu.ph).")
+            raise forms.ValidationError(
+                "Please use your university email (@cityofmalabonuniversity.edu.ph)."
+            )
+
+        # ✅ Ensure email is unique
+        if Student.objects.filter(email=email).exists():
+            raise forms.ValidationError(
+                "This email is already registered. Each student can only create one account."
+            )
+
         return email
 
     def clean_password_confirm(self):
@@ -92,6 +101,19 @@ class StudentRegistrationForm(forms.ModelForm):
         if password and confirm and password != confirm:
             raise forms.ValidationError("Passwords do not match.")
         return confirm
+
+    def clean(self):
+        cleaned_data = super().clean()
+        student_id = str(cleaned_data.get("student_id") or "")
+        email = cleaned_data.get("email") or ""
+
+        if email and student_id:
+            email_username = email.split("@")[0]
+            if email_username != student_id:
+                raise forms.ValidationError(
+                    "The student ID must match the numeric part of your university email."
+                )
+        return cleaned_data
 
     def save(self, commit=True):
         student = super().save(commit=False)

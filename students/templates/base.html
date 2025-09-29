@@ -44,6 +44,60 @@
     footer {
       font-size: 14px;
     }
+
+    /* Settings Modal Glow Theme */
+#settingsModal .modal-content {
+  background: rgba(2, 17, 28, 0.95); /* dark translucent, like page */
+  border: 1px solid rgba(51, 187, 255, 0.4);
+  border-radius: 1rem;
+  box-shadow: 0 0 25px rgba(51, 187, 255, 0.4);
+  color: #cfeaff;
+}
+
+/* Header */
+#settingsModal .modal-header {
+  background: linear-gradient(135deg, #02111c, #0b3c5d);
+  color: #33bbff;
+  text-shadow: 0 0 8px rgba(51, 187, 255, 0.6);
+  border-bottom: 1px solid rgba(51, 187, 255, 0.3);
+}
+
+#settingsModal .modal-header .btn-close {
+  filter: invert(1) drop-shadow(0 0 4px rgba(51, 187, 255, 0.8));
+}
+
+/* Tabs */
+#settingsModal .nav-tabs .nav-link {
+  color: #9ecfff;
+  border: none;
+}
+
+#settingsModal .nav-tabs .nav-link.active {
+  background: rgba(51, 187, 255, 0.15);
+  color: #33bbff;
+  border-radius: .5rem .5rem 0 0;
+  box-shadow: 0 0 10px rgba(51, 187, 255, 0.6);
+}
+
+.pformation, .sec-tings, .pref {
+  color: #33bbff;
+}
+
+/* Cards inside modal */
+#settingsModal .card {
+  background: rgba(11, 60, 93, 0.6);
+  border-radius: .75rem;
+  border: 1px solid rgba(51, 187, 255, 0.3);
+  box-shadow: 0 0 15px rgba(51, 187, 255, 0.25);
+  color: #cfeaff;
+}
+
+/* Footer */
+#settingsModal .modal-footer {
+  background: rgba(2, 17, 28, 0.8);
+  border-top: 1px solid rgba(51, 187, 255, 0.3);
+}
+
   </style>
 
   {% block extra_css %}{% endblock %}
@@ -51,89 +105,208 @@
 <body>
   <div id="mainContent" class="d-flex flex-column min-vh-100">
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-dark shadow-sm px-3 py-2">
-      <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-info fs-4">
-          <i class="bi bi-check2-square me-2"></i>Presence Monitoring
-        </a>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-dark shadow-sm px-3 py-2">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold text-info fs-4">
+      <i class="bi bi-check2-square me-2"></i>Presence Monitoring
+    </a>
 
-        <!-- Mobile: Custom Hamburger -->
-        {% if request.session.student_id %}
-<!-- Mobile: Profile Icon + Name Dropdown (Logged In) -->
-<div class="dropdown d-lg-none mobile-menu ms-auto">
-  <button class="btn bg-transparent d-flex align-items-center p-0" id="mobileUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-    <i class="bi bi-person-circle text-primary fs-4 me-1"></i>
-    <span class="fw-medium text-dark small">{{ request.session.student_name }}</span>
-  </button>
-  <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="mobileUserDropdown">
-    <li class="dropdown-item text-muted small">
-      Student No. <strong>{{ request.session.student_id }}</strong>
-    </li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
-    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-  </ul>
-</div>
-{% else %}
-<!-- Mobile: Guest Dropdown -->
-<div class="dropdown d-lg-none mobile-menu ms-auto">
-  <button class="btn bg-transparent border-0" id="guestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-    <i class="bi bi-person-circle fs-4 text-secondary"></i>
-  </button>
-  <ul class="dropdown-menu dropdown-menu-end bg-dark mt-2" aria-labelledby="guestDropdown">
-    <li><a class="dropdown-item text-secondary fw-bold bg-transparent link-light link-hover-glow" href="{% url 'register' %}"><i class="bi bi-person-plus text-secondary me-2"></i>Sign Up</a></li>
-    <li><a class="dropdown-item text-secondary fw-bold bg-transparent link-light link-hover-glow" href="{% url 'login' %}"><i class="bi bi-person text-secondary me-2"></i>Login</a></li>
-  </ul>
-</div>
-{% endif %}
+    <!-- Mobile Navbar -->
+    {% if request.session.student_id %}
+    <!-- Logged In (Mobile) -->
+    <div class="dropdown d-lg-none mobile-menu ms-auto">
+      <button class="btn bg-transparent d-flex align-items-center p-0" id="mobileUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        {% if request.session.student_photo %}
+          <img src="{{ request.session.student_photo }}" 
+               alt="Profile" 
+               class="rounded-circle me-2" 
+               style="width: 30px; height: 30px; object-fit: cover;">
+        {% else %}
+          <i class="bi bi-person-circle text-primary fs-4 me-2"></i>
+        {% endif %}
+        <span class="fw-medium text-dark small">{{ request.session.student_name }}</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="mobileUserDropdown">
+        <li class="dropdown-item text-muted small">
+          Student No. <strong>{{ request.session.student_id }}</strong>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+      </ul>
+    </div>
+    {% else %}
+    <!-- Guest (Mobile) -->
+    <div class="dropdown d-lg-none mobile-menu ms-auto">
+      <button class="btn bg-transparent border-0" id="guestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-circle fs-4 text-secondary"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end bg-dark mt-2" aria-labelledby="guestDropdown">
+        <li><a class="dropdown-item text-secondary fw-bold bg-transparent link-light link-hover-glow" href="{% url 'register' %}"><i class="bi bi-person-plus text-secondary me-2"></i>Sign Up</a></li>
+        <li><a class="dropdown-item text-secondary fw-bold bg-transparent link-light link-hover-glow" href="{% url 'login' %}"><i class="bi bi-person text-secondary me-2"></i>Login</a></li>
+      </ul>
+    </div>
+    {% endif %}
 
-
-        <!-- Desktop Navbar -->
-        <div class="collapse navbar-collapse d-none d-lg-block" id="navbarContent">
-          {% if request.session.student_id %}
-            <ul class="navbar-nav ms-auto">
-              <li class="nav-item me-3 text-muted d-flex align-items-center">
-                Student No. <span class="fw-semibold ms-1">{{ request.session.student_id }}</span>
-              </li>
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
-                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-person-circle fs-5 text-primary me-2"></i>
-                  {{ request.session.student_name }}
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                </ul>
-              </li>
-            </ul>
-          {% else %}
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a href="{% url 'register' %}" class="nav-link fw-bold text-secondary link-light link-hover-glow">
-                <i class="bi bi-person-plus fs-5 me-1"></i> Sign Up
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="{% url 'login' %}" class="nav-link fw-bold text-secondary link-light link-hover-glow">
-                <i class="bi bi-person fs-5 me-1"></i> Login
-              </a>
-            </li>
+    <!-- Desktop Navbar -->
+    <div class="collapse navbar-collapse d-none d-lg-block" id="navbarContent">
+      {% if request.session.student_id %}
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item me-3 text-muted d-flex align-items-center">
+          Student No. <span class="fw-semibold ms-1">{{ request.session.student_id }}</span>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center text-secondary" href="#" id="userDropdown"
+             role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {% if request.session.student_photo %}
+              <img src="{{ request.session.student_photo }}" 
+                   alt="Profile" 
+                   class="rounded-circle me-2" 
+                   style="width: 32px; height: 32px; object-fit: cover;">
+            {% else %}
+              <i class="bi bi-person-circle fs-5 text-secondary me-2"></i>
+            {% endif %}
+            {{ request.session.student_name }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear me-2"></i>Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
           </ul>
-          {% endif %}
-        </div>
-      </div>
-    </nav>
+        </li>
+      </ul>
+      {% else %}
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a href="{% url 'register' %}" class="nav-link fw-bold text-secondary link-light link-hover-glow">
+            <i class="bi bi-person-plus fs-5 me-1"></i> Sign Up
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'login' %}" class="nav-link fw-bold text-secondary link-light link-hover-glow">
+            <i class="bi bi-person fs-5 me-1"></i> Login
+          </a>
+        </li>
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+</nav>
 
     <!-- Page Content -->
     <main class="container flex-grow-1 my-4">
       {% block content %}{% endblock %}
     </main>
+
+
+    <!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-lg rounded-3 border-0">
+      
+      <!-- Header -->
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold" id="settingsModalLabel">
+          <i class="bi bi-gear me-2"></i>Settings
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+              <i class="bi bi-person-circle me-1"></i> Profile
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+              <i class="bi bi-shield-lock me-1"></i> Security
+            </button>
+          </li>
+          
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="settingsTabsContent">
+          
+          <!-- Profile Tab -->
+          <div class="tab-pane fade show active" id="profile" role="tabpanel">
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body">
+                <h6 class="fw-bold mb-3 pformation">Profile Information</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="userName" class="form-label"><i class="bi bi-person-fill me-1"></i> Full Name</label>
+                    <input type="text" class="form-control" id="userName" value="User Name">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="userEmail" class="form-label"><i class="bi bi-envelope-fill me-1"></i> Email</label>
+                    <input type="email" class="form-control" id="userEmail" value="username@example.com">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Tab -->
+          <div class="tab-pane fade" id="security" role="tabpanel">
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body">
+                <h6 class="fw-bold mb-3 sec-tings">Security</h6>
+                <div class="row g-3">
+  <!-- New Password -->
+  <div class="col-md-6">
+    <label for="adminPassword" class="form-label">
+      <i class="bi bi-key-fill me-1"></i> New Password
+    </label>
+    <div class="input-group">
+      <input type="password" class="form-control" id="adminPassword" placeholder="••••••••">
+      <button class="btn btn-outline-secondary" type="button" id="toggleAdminPassword">
+        <i class="bi bi-eye-slash"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Confirm Password -->
+  <div class="col-md-6">
+    <label for="confirmPassword" class="form-label">
+      <i class="bi bi-check2-circle me-1"></i> Confirm Password
+    </label>
+    <div class="input-group">
+      <input type="password" class="form-control" id="confirmPassword" placeholder="••••••••">
+      <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+        <i class="bi bi-eye-slash"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+              </div>
+            </div>
+          </div>
+
+          
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-primary">
+          <i class="bi bi-save me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- Footer -->
     <footer class="bg-dark text-center py-3 mt-auto">

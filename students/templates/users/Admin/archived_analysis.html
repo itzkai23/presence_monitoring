@@ -5,18 +5,39 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2 class="mb-4"><i class="bi bi-archive me-2"></i> Archived Data Analysis</h2>
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-uppercase text-primary-emphasis">
+      <i class="bi bi-bar-chart me-2"></i> Archived Data Analysis
+    </h2>
+  </div>
 
+  <!-- Search Bar -->
+  <div class="col-md-6 position-relative mb-3">
+    <input 
+      type="text" 
+      id="searchArchived" 
+      class="form-control rounded pe-5" 
+      placeholder="Search archived analysis..."
+    >
+    <button 
+      class="btn position-absolute end-0 top-0 bottom-0 me-0" 
+      id="clearSearch" 
+      type="button" 
+      style="border: none; background: transparent; display: none;"
+    >
+      <i class="bi bi-x-circle-fill text-secondary"></i>
+    </button>
+  </div>
+
+  <!-- Archived Analysis Table -->
   <div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
+    <table class="table table-bordered table-hover align-middle" id="archivedTable">
       <thead class="table-dark text-center">
         <tr>
           <th>#</th>
           <th>Archived At</th>
           <th>Summary Type</th>
           <th>Summary Date</th>
-          <th>Students</th>
-          <th>Guests</th>
           <th>Summary</th>
         </tr>
       </thead>
@@ -24,20 +45,54 @@
         {% for item in archived_entries %}
           <tr>
             <td>{{ forloop.counter }}</td>
-            <td>{{ item.archived_at }}</td>
-            <td>{{ item.reference.get_summary_type_display }}</td>
-            <td>{{ item.reference.summary_date }}</td>
-            <td>{{ item.reference.student_total }}</td>
-            <td>{{ item.reference.guest_total }}</td>
-            <td class="text-start">{{ item.reference.analysis_summary }}</td>
+            <td>{{ item.archived_at|date:"F j, Y - g:i A" }}</td>
+            <td>
+              {% if item.summary_type == 'daily' %}
+                <span class="badge bg-info text-dark">Daily</span>
+              {% elif item.summary_type == 'weekly' %}
+                <span class="badge bg-success">Weekly</span>
+              {% elif item.summary_type == 'monthly' %}
+                <span class="badge bg-warning text-dark">Monthly</span>
+              {% endif %}
+            </td>
+            <td>{{ item.summary_date|date:"F j, Y" }}</td>
+            <td class="text-start" style="white-space: pre-line;">{{ item.analysis_summary }}</td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7" class="text-center">No archived analysis found.</td>
+            <td colspan="5" class="text-center">No archived analysis found.</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+<!-- Search & Filter Script -->
+<script>
+  const searchInput = document.getElementById("searchArchived");
+  const clearBtn = document.getElementById("clearSearch");
+  const rows = document.querySelectorAll("#archivedTable tbody tr");
+
+  // Live filtering
+  searchInput.addEventListener("keyup", () => {
+    const query = searchInput.value.toLowerCase();
+    rows.forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(query) ? "" : "none";
+    });
+  });
+
+  // Show/Hide clear button
+  searchInput.addEventListener("input", () => {
+    clearBtn.style.display = searchInput.value ? "block" : "none";
+  });
+
+  // Reset search
+  clearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    clearBtn.style.display = "none";
+    rows.forEach(row => row.style.display = "");
+    searchInput.focus();
+  });
+</script>
 {% endblock %}

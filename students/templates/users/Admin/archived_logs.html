@@ -13,16 +13,16 @@
 <div class="container mt-4">
   <div class="text-center mb-4">
     <h2 class="fw-bold text-uppercase text-primary-emphasis">
-      <i class="bi bi-box me-2"></i>Archived Presence Logs
+      <i class="bi bi-journal-text me-2"></i>Archived Presence Logs
     </h2>
   </div>  
 
-  <div class="input-group mb-3 position-relative">
+  <div class="col-md-6 mb-3 position-relative">
   <input 
     type="text" 
     id="searchArchive" 
     class="form-control rounded pe-5" 
-    placeholder="Search archived records..."
+    placeholder="Search archived logs..."
   >
   <button 
     class="btn position-absolute end-0 top-0 bottom-0 me-0" 
@@ -54,8 +54,8 @@
         {% for log in archived_logs %}
         <tr class="text-center">
           <td>{{ forloop.counter }}</td>
-          <td>{{ log.archived_at|date:"Y-m-d H:i" }}</td>
-          <td>{{ log.logs_timestamp|date:"Y-m-d H:i" }}</td>
+          <td>{{ log.archived_at|date:"F j, Y" }}</td>
+          <td>{{ log.logs_timestamp|date:"F j, Y - g:i A" }}</td>
           <td>{{ log.student_id|default:"Guest" }}</td>
           <td>
             {% if log.first_name %}
